@@ -98,7 +98,7 @@ def find_shoulders (hull_cube2, wavelengths):
     return (shoulder0, shoulder1, shoulder2, shoulder3)
 
 #Continumm fits
-def continnums_definition (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
+def continnum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
     
             shoulder_0p=np.where(hull_cube[0:20,y_continum,x_continum] == max(hull_cube[0:20,y_continum,x_continum]))[0][-1]  #Finding the shoulders, as they will limit the fit
             shoulder_0y=filtered_cube[shoulder_0p,y_continum,x_continum]
@@ -110,8 +110,10 @@ def continnums_definition (filtered_cube,hull_cube,wavelengths,x_continum,y_cont
             interpolation_x1=np.append(interpolation_x,shoulder_1x)  #Creating X and Y values to do the fit
             interpolation_y=np.array(shoulder_0y)
             interpolation_y1=np.append(interpolation_y,shoulder_1y)
-            fit_1000=np.polyfit(interpolation_x1,interpolation_y1,1)  #Doing the fit, it is a lienar fit
+            fit_1000=np.polyfit(interpolation_x1,interpolation_y1,1)  #Doing the fit, it is a linear fit
+            return fit_1000
 
+def continnum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
             shoulder_2p=np.where(hull_cube[40:66,y_continum,x_continum] == max(hull_cube[40:66,y_continum,x_continum]))[0][-1]+40  #Finding the shoulders, as they will limit the fit
             shoulder_2y=filtered_cube[shoulder_2p,y_continum,x_continum]
             shoulder_2x=wavelengths[shoulder_2p]
@@ -122,5 +124,5 @@ def continnums_definition (filtered_cube,hull_cube,wavelengths,x_continum,y_cont
             interpolation_x3=np.append(interpolation_x2,shoulder_3x)  #Creating X and Y values to do the fit
             interpolation_y2=np.array(shoulder_2y)
             interpolation_y3=np.append(interpolation_y2,shoulder_3y)
-            fit_2000=np.polyfit(interpolation_x3,interpolation_y3,1)  #Doing the fit, it is a lienar fit
-            return (fit_1000, fit_2000)
+            fit_2000=np.polyfit(interpolation_x3,interpolation_y3,1)  #Doing the fit, it is a linear fit
+            return fit_2000
