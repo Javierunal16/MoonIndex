@@ -2,15 +2,18 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 
+
 #Viewing a cube
 def cube_plot(cube_plot,band,size):
     plot=cube_plot[band,:,:].plot.imshow(aspect=cube_plot.shape[2]/cube_plot.shape[1], size=size, robust=True)
     return (plot)
 
+
 #Viewing an image
 def image_plot(image_imput,size2):
     plot2=image_imput.plot.imshow(aspect=image_imput.shape[1]/image_imput.shape[0], size=size2, robust=True)
     return (plot2)
+
 
 #Comparing images
 def plot_comparison (cube_plot1, cube_plot2, title1, title2, band):
@@ -20,6 +23,7 @@ def plot_comparison (cube_plot1, cube_plot2, title1, title2, band):
     ax[1].imshow(cube_plot2[band,:,:])
     ax[1].set_title(title2)
     return(plt.show(plot1))
+
 
 #Fourier fitler images, it does the filter for one band to check visually
 def fourier_plot (gauss_filter2,fourie_cube2,band,filter_width2, filter_high2):
@@ -58,6 +62,7 @@ def fourier_plot (gauss_filter2,fourie_cube2,band,filter_width2, filter_high2):
     ax4.imshow(fourie_cube2.data[band,:,:])
     ax4.title.set_text('After inverse Fourier')
     
+
 #Profile comparisons
 def profile_comparison (cube_profile1, cube_profile2,wavelengths, title_profile1, title_profile2, pixelx,pixely):
     fig2, (ax22, ax23)=plt.subplots(1,2,figsize=(10,3))
@@ -67,12 +72,14 @@ def profile_comparison (cube_profile1, cube_profile2,wavelengths, title_profile1
     ax23.title.set_text(title_profile2)
     return plt.show(fig2)
 
+
 #Single profile
 def profile_plot (profile_singlecube, wavelengths,title_singleprofile, pixelx2,pixely2):
     plt.figure(figsize=(10,3))
     plt.plot(wavelengths, profile_singlecube[:,pixely2,pixelx2])
     plt.title(title_singleprofile)
     return (plt.plot)
+
 
 #Plotting the continums
 def plot_continnums (fourier_cube,fitp_1000,fitp_2000,wavelengths,x_coord,y_coord):

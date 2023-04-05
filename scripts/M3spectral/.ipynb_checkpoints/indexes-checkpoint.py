@@ -1,10 +1,12 @@
 import numpy as np
 import M3spectral.preparation
 
+
 #R540, reflectance at 540 nm
 def R540 (fourier_cube):
     cube_R540=fourier_cube[0,:,:]  #The first band corresponds to that wavelength
     return cube_R540
+
 
 #BDI, band depth at the 1000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
 def BDI (fourier_cube, hull_cube, wavelengths):
@@ -31,6 +33,7 @@ def BDI (fourier_cube, hull_cube, wavelengths):
     cube_BDI.data=stack_BDIa.reshape(y,z)
     return cube_BDI
 
+
 #BDII, band depth at the 2000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
 def BDII (fourier_cube, hull_cube, wavelengths):
     cube_BDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
@@ -56,6 +59,7 @@ def BDII (fourier_cube, hull_cube, wavelengths):
     cube_BDII.data=stack_BDIIa.reshape(y,z)
     return cube_BDII
 
+
 #SS1200, Spectral slope between maximun right shoulder and 540nm
 def SSI (fourier_cube, hull_cube, wavelengths):
     SSI=fourier_cube[0,:,:].copy()
@@ -76,6 +80,7 @@ def SSI (fourier_cube, hull_cube, wavelengths):
     SSI.data=stack_SSIa.reshape(y,z)
     return SSI
 
+
 #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
 def clementine (fourier_cube):
     clem=fourier_cube[0:3,:,:].copy()    
@@ -85,11 +90,13 @@ def clementine (fourier_cube):
     clem.data=np.dstack((B1,B2,B3)).transpose(2,0,1)
     return clem
 
+
 #RGB1. R: SSI, G: BDI, B: BDII
 def RGB1 (fourier_cube,SSI_cube,BDI_cube,BII_cube):
     RGB1=fourier_cube[0:3,:,:].copy()
     RGB1.data=np.dstack((SSI_cube,BDI_cube,BII_cube)).transpose(2,0,1)
     return RGB1
+
 
 
 #RGB2. R: SSBI, G: R540 nm, B: BCII
@@ -98,16 +105,19 @@ def RGB2 (fourier_cube,SSI_cube, R540_cube, BCII_cube):
     RGB2.data=np.dstack((SSI_cube,R540_cube,BCII_cube)).transpose(2,0,1)
     return RGB2
 
+
 #RGB3. R: SSBI, G: R540 nm, B: BCI
 def RGB3 (fourier_cube,SSI_cube,R540_cube,BCI_cube):
     RGB3=fourier_cube[0:3,:,:].copy()
     RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
     return RGB3
 
+
 #Olivine detection index
 def olivine (fourier_filter):
     ol=(((fourier_filter[50,:,:]/((0.1*fourier_filter[21,:,:])+(0.1*fourier_filter[29,:,:])+(0.4*fourier_filter[35,:,:])+(0.4*fourier_filter[42,:,:])))-1))
     return ol
+
 
 #NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
 def NIR (fourier_cube,hull_cube,wavelengths):
@@ -161,3 +171,103 @@ def NIR (fourier_cube,hull_cube,wavelengths):
     NIR_total=fourier_cube[0:3,:,:].copy()
     NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
     return NIR_total
+
+
+#RGB4. R:BCI, G: BCII, B:BAI, this index combines the band centers wit the band area at 1000 nm
+def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000):
+    y,z=fourier_cube[0,:,:].shape
+    SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
+    SR=np.append(39.92,SR)   #Adding the first value
+
+    #Calculating the band area
+    BAI=fourier_cube[0,:,:].copy()
+    stack_BAI=[]
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            s0 = shoulder0.data[a,b]  #The shoulders limits the area calculation
+            s1 = shoulder1.data[a,b]
+        
+            start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
+            end = np.where(wavelengths == s1)[0][0].item()
+        
+           
+            imput_SR= SR[start:end]
+            imput_CCA= fourier_cube.data[:,a,b]
+            
+            sum3=0
+            for c in range(start, end):
+                
+                sum3 += ((1 - imput_CCA[c-start]) * imput_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
+                
+            stack_BAI.append(sum3)
+        
+    stack_BAIa=np.array(stack_BAI)
+    BAI.data=stack_BAIa.reshape(y,z)
+
+    #Creating the RGB
+    CCA=fourier_cube[0:3,:,:].copy()
+    CCA.data=np.dstack((minimum_1000,minimum_2000,BAI)).transpose(2,0,1)
+    return CCA
+
+
+#RGB5. R:ASY, G:BCII, B: BAI, this index combines the band asymmetry at 1000 with the center at 2000 and the band area at 1000
+def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000,BAI):
+    SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
+    SR=np.append(39.92,SR)   #Adding the first value
+    
+    #Caculating the asymmetry
+    y,z=fourier_cube[0,:,:].shape
+    ASY=fourier_cube[0,:,:].copy()
+
+    stack_ASY1=[]
+    stack_ASY2=[]
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            s00 = shoulder0.data[a,b]  #The asimmetry is also calculated inside the shoulders
+            s11 = shoulder1.data[a,b]
+            input_min1000=min1000.data[a,b]
+
+            start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
+            end1 = np.where(wavelengths == s11)[0][0].item()
+            middle=np.where(wavelengths == input_min1000)[0][0].item()
+           
+            imput_SR1= SR[start1:middle]
+            imput_SR2= SR[middle:end1]
+            imput_CCA= fourier_cube.data[:,a,b]
+            
+            sum4=0
+            for c in range(start1, middle):
+                
+                sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
+                
+            stack_ASY1.append(sum4)
+            
+            
+            sum5=0
+            for d in range(middle, end1):
+                
+                sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                
+            stack_ASY2.append(sum5)         
+            
+    #Asimetry calculation
+    sum_ASY=np.add(stack_ASY1,stack_ASY2)  #Calcualting the total area
+    stack_ASY3=[]
+
+    for a in range(len(stack_ASY2)):
+                
+        if stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
+                    
+            stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  #The asymmetry is the difference beetwen the two areas when dividing the peak in half, it is given in as a pecentage of the total area
+                    
+        else:  #If the right side area is bigger, the asmmetry is positive
+                
+            stack_ASY3.append((stack_ASY2[a]-stack_ASY1[a])*100/sum_ASY[a])
+
+    stack_ASY3a=np.array(stack_ASY3)
+    ASY.data=stack_ASY3a.reshape(y,z)
+    RGB5=fourier_cube[0:3,:,:].copy()
+    RGB5.data=np.dstack((ASY,min2000,BAI)).transpose(2,0,1)
+    return RGB5

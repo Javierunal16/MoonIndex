@@ -1,11 +1,33 @@
 import numpy as np
 import pysptools.spectro as spectro
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+
 
 #This function attach the wavelength to the cube
 def attach_wavelen (cube_alone,wave):
-    cube_alone.coords['wavelength'] = ('band', wave)
-    cube_wave = cube_alone.swap_dims({'band':'wavelength'})
+    cube_alone2=cube_alone[2:85,:,:]
+    cube_alone2.data[cube_alone2.data < -1000]= 0
+    cube_alone2.coords['wavelength'] = ('band', wave)
+    cube_wave = cube_alone2.swap_dims({'band':'wavelength'})
     return cube_wave
+
+
+#This function attach the wavelength to the cube, sets the no value data to 0 and deletes the two first malfunctioning bands
+def crop_cube (initial_cube,crx1,crx2,cry1,cry2):
+    cx1,cx2=crx1,crx2
+    cy1,cy2=cry1,cry2
+    M3_cubecrop=initial_cube[:,cy1:cy2,cx1:cx2]
+    rect_crop=patches.Rectangle((cx1,cy1),(cx2-cx1),(cy2-cy1),linewidth=1, edgecolor='r', facecolor='none')
+
+    plot0, ax=plt.subplots(1,2, figsize=(5,20))
+    ax[0].imshow(initial_cube[5,:,:])
+    ax[0].set_title('Full cube')
+    ax[0].add_patch(rect_crop)
+    ax[1].imshow(M3_cubecrop[5,:,:])
+    ax[1].set_title('Cropped cube')
+    return M3_cubecrop
+
 
 #This function makes the convex hull
 def convex_hull (fourier_cube,wavelengths):
@@ -22,6 +44,7 @@ def convex_hull (fourier_cube,wavelengths):
     stack_hulla=np.array(stack_hull)
     hull_cube.data=stack_hulla.reshape(y3,z3,x3).transpose(2,0,1)
     return hull_cube
+
 
 #Finding the minimums
 def find_minimums (hull_cube,wavelengths):
@@ -50,6 +73,7 @@ def find_minimums (hull_cube,wavelengths):
     stack_min2000a=np.array(stack_min2000)
     min2000.data=stack_min2000a.reshape(y4,z4)
     return (min1000,min2000)
+
 
 #Finding the shoulders, highest poitns beetwen the minimums
 def find_shoulders (hull_cube2, wavelengths):
@@ -97,7 +121,8 @@ def find_shoulders (hull_cube2, wavelengths):
     shoulder3.data=stack_shoulder3a.reshape(y5,z5)
     return (shoulder0, shoulder1, shoulder2, shoulder3)
 
-#Continumm fits
+
+#Continumm fit 1000
 def continnum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
     
             shoulder_0p=np.where(hull_cube[0:20,y_continum,x_continum] == max(hull_cube[0:20,y_continum,x_continum]))[0][-1]  #Finding the shoulders, as they will limit the fit
@@ -113,6 +138,8 @@ def continnum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
             fit_1000=np.polyfit(interpolation_x1,interpolation_y1,1)  #Doing the fit, it is a linear fit
             return fit_1000
 
+
+#Continumm fit 2000       
 def continnum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
             shoulder_2p=np.where(hull_cube[40:66,y_continum,x_continum] == max(hull_cube[40:66,y_continum,x_continum]))[0][-1]+40  #Finding the shoulders, as they will limit the fit
             shoulder_2y=filtered_cube[shoulder_2p,y_continum,x_continum]

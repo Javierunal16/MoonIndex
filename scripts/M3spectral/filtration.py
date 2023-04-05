@@ -4,6 +4,7 @@ from specutils.manipulation import (box_smooth, gaussian_smooth, trapezoid_smoot
 import astropy.units as u
 import cv2
 
+
 #Gauss filtration
 def gauss_filter (cube_filter1,wavelen):
     tcube=np.transpose(cube_filter1.data,(2,1,0))  #Transposing data to ingest in Spec1d2
@@ -19,6 +20,7 @@ def gauss_filter (cube_filter1,wavelen):
     M3_gaussfilter=cube_filter1.copy()  #Saving the filtered data in a new cube, copied from the original to maintain the projection
     M3_gaussfilter.data=np.transpose(spec1d2_filtered,(2,1,0))
     return(M3_gaussfilter)
+
 
 #Fourier filtration
 def fourier_filter(gauss_cube,filter_width,filter_high):
