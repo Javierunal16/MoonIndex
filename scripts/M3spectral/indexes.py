@@ -60,7 +60,7 @@ def BDII (fourier_cube, hull_cube, wavelengths):
     return cube_BDII
 
 
-#SS1200, Spectral slope between maximun right shoulder and 540nm
+#SS1000, Spectral slope between maximun right shoulder and 540nm
 def SSI (fourier_cube, hull_cube, wavelengths):
     SSI=fourier_cube[0,:,:].copy()
     stack_SSI=[]
