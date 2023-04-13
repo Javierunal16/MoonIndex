@@ -100,15 +100,15 @@ def RGB1 (fourier_cube,SSI_cube,BDI_cube,BII_cube):
 
 
 #RGB2. R: SSBI, G: R540 nm, B: BCII
-def RGB2 (fourier_cube,SSI_cube, R540_cube, BCII_cube):
-    RGB2=fourier_cube[0:3,:,:].copy()
+def RGB2 (gauss_cube,SSI_cube, R540_cube, BCII_cube):
+    RGB2=gauss_cube[0:3,:,:].copy()
     RGB2.data=np.dstack((SSI_cube,R540_cube,BCII_cube)).transpose(2,0,1)
     return RGB2
 
 
 #RGB3. R: SSBI, G: R540 nm, B: BCI
-def RGB3 (fourier_cube,SSI_cube,R540_cube,BCI_cube):
-    RGB3=fourier_cube[0:3,:,:].copy()
+def RGB3 (gauss_cub,SSI_cube,R540_cube,BCI_cube):
+    RGB3=gauss_cub[0:3,:,:].copy()
     RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
     return RGB3
 
