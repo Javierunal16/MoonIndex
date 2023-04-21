@@ -7,57 +7,44 @@ def R540 (fourier_cube):
     cube_R540=fourier_cube[0,:,:]  #The first band corresponds to that wavelength
     return cube_R540
 
-
-#BDI, band depth at the 1000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
-def BDI (fourier_cube, hull_cube, wavelengths):
-    cube_BDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_BDI=[]
+#BDI, band depth at 1000 nm with the convex hull method
+def CH_BDI (hull_cube):
+    cube_CHBDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
+    stack_CHBDI=[]
     y,z=hull_cube[0,:,:].shape
     
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
             
-            imput_BDI=fourier_cube.data[:,a,b]
-            imput_hull=hull_cube.data[:,a,b]
+            imput_CH=hull_cube.data[:,a,b]
         
-            rfl_1000p=np.where(imput_hull[0:29] == min(imput_hull[0:29]))[0]  #Finding the value of the reflectance
-            rfl_1000=imput_BDI[rfl_1000p]
-         
-            fits_1000BDI=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 1000 nm
-            fitrfl_1000=np.polyval(fits_1000BDI,wavelengths[rfl_1000p])  #Obtainign the value of the continumm with the fit
-            Depth1000=(1-(rfl_1000/fitrfl_1000))  #DOing the division
-        
-            stack_BDI.append(Depth1000)
+            CHBDI_1000=1 - (min(imput_CH))  #Finding the value of the band depth
+    
+            stack_CHBDI.append(CHBDI_1000)
             
-    stack_BDIa=np.array(stack_BDI)
-    cube_BDI.data=stack_BDIa.reshape(y,z)
-    return cube_BDI
+    stack_CHBDIa=np.array(stack_CHBDI)
+    cube_CHBDI.data=stack_CHBDIa.reshape(y,z)
+    return cube_CHBDI
 
 
-#BDII, band depth at the 2000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
-def BDII (fourier_cube, hull_cube, wavelengths):
-    cube_BDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_BDII=[]
+#BDII, band depth at 2000 nm with the convex hull method
+def CH_BDII (hull_cube):
+    cube_CHBDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
+    stack_CHBDII=[]
     y,z=hull_cube[0,:,:].shape
     
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
             
-            imput_BDI=fourier_cube.data[:,a,b]
-            imput_hull=hull_cube.data[:,a,b]
+            imput_CH=hull_cube.data[:,a,b]
         
-            rfl_2000p=np.where(imput_hull[35:75] == min(imput_hull[35:75]))[0]+35 #Finding the value of the reflectance
-            rfl_2000=imput_BDI[rfl_2000p]
-         
-            fits_2000BDI=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 2000 nm
-            fitrfl_2000=np.polyval(fits_2000BDI,wavelengths[rfl_2000p])  #Obtainign the value of the continumm with the fit
-            Depth2000=(1-(rfl_2000/fitrfl_2000))  #DOing the division
-        
-            stack_BDII.append(Depth2000)
+            CHBDI_2000=1 - (min(imput_CH))  #Finding the value of the band depth
+    
+            stack_CHBDII.append(CHBDI_2000)
             
-    stack_BDIIa=np.array(stack_BDII)
-    cube_BDII.data=stack_BDIIa.reshape(y,z)
-    return cube_BDII
+    stack_CHBDIIa=np.array(stack_CHBDII)
+    cube_CHBDII.data=stack_CHBDIIa.reshape(y,z)
+    return cube_CHBDII
 
 
 #SS1000, Spectral slope between maximun right shoulder and 540nm
@@ -119,60 +106,6 @@ def olivine (fourier_filter):
     return ol
 
 
-#NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
-def NIR (fourier_cube,hull_cube,wavelengths):
-    y,z=hull_cube[0,:,:].shape
-    #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
-    NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
-    
-    #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
-    NIR2=fourier_cube[0,:,:].copy()
-    NIR2_slice=fourier_cube[49:70,:,:]  #Defines the section to iterate around 2000 nm
-    stack_NIR2=[]
-    
-    for a in range(NIR2_slice.data.shape[1]):
-        for b in range(NIR2_slice.data.shape[2]):
-            for c in range(NIR2_slice.data.shape[0]):
-                sum1=0
-                imput_nir=fourier_cube.data[c,a,b]
-                imput_hull=hull_cube.data[:,a,b]
-                
-                fits_2000NIR2=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
-                fitnir_2000=np.polyval(fits_2000NIR2, wavelengths[c])
-            
-                sum1 += (1-(imput_nir/fitnir_2000))  #Summatory
-            stack_NIR2.append(sum1)
-        
-    stack_NIR2a=np.array(stack_NIR2)
-    NIR2.data=stack_NIR2a.reshape(y,z)
-    
-     #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 1000 nm region
-    NIR3=fourier_cube[0,:,:].copy()
-    NIR3_slice=fourier_cube[8:34,:,:]  #Defines the section to iterate around 2000 nm
-    stack_NIR3=[]
-    
-    for a in range(NIR3_slice.data.shape[1]):
-        for b in range(NIR3_slice.data.shape[2]):
-            for c in range(NIR3_slice.data.shape[0]):
-                sum2=0
-                imput_nir2=fourier_cube.data[c,a,b]
-                imput_hull4=hull_cube.data[:,a,b]
-            
-                fits_2000NIR3=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
-                fitnir_1000=np.polyval(fits_2000NIR3, wavelengths[c])
-            
-                sum2 += (1-(imput_nir2/fitnir_1000))
-            stack_NIR3.append(sum2)
-            
-    stack_NIR3a=np.array(stack_NIR3)
-    NIR3.data=stack_NIR3a.reshape(y,z)
-    
-    #Making the composite
-    NIR_total=fourier_cube[0:3,:,:].copy()
-    NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
-    return NIR_total
-
-
 #RGB4. R:BCI, G: BCII, B:BAI, this index combines the band centers wit the band area at 1000 nm
 def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000):
     y,z=fourier_cube[0,:,:].shape
@@ -211,8 +144,8 @@ def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000
     return CCA
 
 
-#RGB5. R:ASY, G:BCII, B: BAI, this index combines the band asymmetry at 1000 with the center at 2000 and the band area at 1000
-def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000,BAI):
+#RGB5. R:ASY, G:BCI, B: BCII, this index combines the band asymmetry at 1000 with the center at 2000 and the band area at 1000
+def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
     SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
     SR=np.append(39.92,SR)   #Adding the first value
     
@@ -269,5 +202,168 @@ def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000,BAI):
     stack_ASY3a=np.array(stack_ASY3)
     ASY.data=stack_ASY3a.reshape(y,z)
     RGB5=fourier_cube[0:3,:,:].copy()
-    RGB5.data=np.dstack((ASY,min2000,BAI)).transpose(2,0,1)
+    RGB5.data=np.dstack((ASY,min1000,min2000)).transpose(2,0,1)
     return RGB5
+
+
+#NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
+def CH_NIR (fourier_cube,hull_cube1000,hull_cube2000):
+    y1000,z1000=hull_cube1000[0,:,:].shape
+    y2000,z2000=hull_cube2000[0,:,:].shape
+    #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
+    NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
+    #NIR1=1 - hull_cube2000[15]
+    
+    #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
+    NIR2=hull_cube2000[0,:,:].copy()
+    NIR2_slice=hull_cube2000[9:30,:,:]  #Defines the section to iterate around 2000 nm
+    stack_NIR2=[]
+    
+    for a in range(NIR2_slice.data.shape[1]):
+        for b in range(NIR2_slice.data.shape[2]):
+            for c in range(NIR2_slice.data.shape[0]):
+                sum1=0
+                
+                imput_hull=hull_cube2000.data[:,a,b]
+            
+                sum1 += (1- imput_hull[c])  #Summatory
+                
+            stack_NIR2.append(sum1)
+        
+    stack_NIR2a=np.array(stack_NIR2)
+    NIR2.data=stack_NIR2a.reshape(y2000,z2000)
+    
+     #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 1000 nm region
+    NIR3=hull_cube1000[0,:,:].copy()
+    NIR3_slice=hull_cube1000[8:34,:,:]  #Defines the section to iterate around 2000 nm
+    stack_NIR3=[]
+    
+    for a in range(NIR3_slice.data.shape[1]):
+        for b in range(NIR3_slice.data.shape[2]):
+            for c in range(NIR3_slice.data.shape[0]):
+                sum2=0
+    
+                imput_hull4=hull_cube1000.data[:,a,b]
+            
+                sum2 += (1-imput_hull4[c])
+                
+            stack_NIR3.append(sum2)
+            
+    stack_NIR3a=np.array(stack_NIR3)
+    NIR3.data=stack_NIR3a.reshape(y1000,z1000)
+    
+    #Making the composite
+    NIR_total=fourier_cube[0:3,:,:].copy()
+    NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
+    return NIR_total
+
+
+
+##INDEXES WITH THE LIENAR FIT REMOVAL METHOD
+
+
+
+#BDI, band depth at the 1000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
+def LFBDI (fourier_cube, hull_cube, wavelengths):
+    cube_BDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
+    stack_BDI=[]
+    y,z=hull_cube[0,:,:].shape
+    
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            imput_BDI=fourier_cube.data[:,a,b]
+            imput_hull=hull_cube.data[:,a,b]
+        
+            rfl_1000p=np.where(imput_hull[0:29] == min(imput_hull[0:29]))[0]  #Finding the value of the reflectance
+            rfl_1000=imput_BDI[rfl_1000p]
+         
+            fits_1000BDI=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 1000 nm
+            fitrfl_1000=np.polyval(fits_1000BDI,wavelengths[rfl_1000p])  #Obtainign the value of the continumm with the fit
+            Depth1000=(1-(rfl_1000/fitrfl_1000))  #DOing the division
+        
+            stack_BDI.append(Depth1000)
+            
+    stack_BDIa=np.array(stack_BDI)
+    cube_BDI.data=stack_BDIa.reshape(y,z)
+    return cube_BDI
+
+
+#BDII, band depth at the 2000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
+def LFBDII (fourier_cube, hull_cube, wavelengths):
+    cube_BDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
+    stack_BDII=[]
+    y,z=hull_cube[0,:,:].shape
+    
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            imput_BDI=fourier_cube.data[:,a,b]
+            imput_hull=hull_cube.data[:,a,b]
+        
+            rfl_2000p=np.where(imput_hull[35:75] == min(imput_hull[35:75]))[0]+35 #Finding the value of the reflectance
+            rfl_2000=imput_BDI[rfl_2000p]
+         
+            fits_2000BDI=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 2000 nm
+            fitrfl_2000=np.polyval(fits_2000BDI,wavelengths[rfl_2000p])  #Obtainign the value of the continumm with the fit
+            Depth2000=(1-(rfl_2000/fitrfl_2000))  #DOing the division
+        
+            stack_BDII.append(Depth2000)
+            
+    stack_BDIIa=np.array(stack_BDII)
+    cube_BDII.data=stack_BDIIa.reshape(y,z)
+    return cube_BDII
+
+
+#NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
+def NIR (fourier_cube,hull_cube,wavelengths):
+    y,z=hull_cube[0,:,:].shape
+    #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
+    NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
+    
+    #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
+    NIR2=fourier_cube[0,:,:].copy()
+    NIR2_slice=fourier_cube[49:70,:,:]  #Defines the section to iterate around 2000 nm
+    stack_NIR2=[]
+    
+    for a in range(NIR2_slice.data.shape[1]):
+        for b in range(NIR2_slice.data.shape[2]):
+            for c in range(NIR2_slice.data.shape[0]):
+                sum1=0
+                imput_nir=fourier_cube.data[c,a,b]
+                imput_hull=hull_cube.data[:,a,b]
+                
+                fits_2000NIR2=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
+                fitnir_2000=np.polyval(fits_2000NIR2, wavelengths[c])
+            
+                sum1 += (1-(imput_nir/fitnir_2000))  #Summatory
+            stack_NIR2.append(sum1)
+        
+    stack_NIR2a=np.array(stack_NIR2)
+    NIR2.data=stack_NIR2a.reshape(y,z)
+    
+     #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 1000 nm region
+    NIR3=fourier_cube[0,:,:].copy()
+    NIR3_slice=fourier_cube[8:34,:,:]  #Defines the section to iterate around 2000 nm
+    stack_NIR3=[]
+    
+    for a in range(NIR3_slice.data.shape[1]):
+        for b in range(NIR3_slice.data.shape[2]):
+            for c in range(NIR3_slice.data.shape[0]):
+                sum2=0
+                imput_nir2=fourier_cube.data[c,a,b]
+                imput_hull4=hull_cube.data[:,a,b]
+            
+                fits_2000NIR3=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
+                fitnir_1000=np.polyval(fits_2000NIR3, wavelengths[c])
+            
+                sum2 += (1-(imput_nir2/fitnir_1000))
+            stack_NIR3.append(sum2)
+            
+    stack_NIR3a=np.array(stack_NIR3)
+    NIR3.data=stack_NIR3a.reshape(y,z)
+    
+    #Making the composite
+    NIR_total=fourier_cube[0:3,:,:].copy()
+    NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
+    return NIR_total
