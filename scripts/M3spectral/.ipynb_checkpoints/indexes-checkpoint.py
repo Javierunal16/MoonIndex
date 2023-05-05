@@ -8,17 +8,21 @@ def R540 (fourier_cube):
     return cube_R540
 
 #BDI, band depth at 1000 nm with the convex hull method
-def CH_BDI (hull_cube):
+def CH_BDI (hull_cube,min1000,wavelengths3):
     cube_CHBDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
     stack_CHBDI=[]
     y,z=hull_cube[0,:,:].shape
+    wavelengths=wavelengths3[0:76]
     
     for a in range(hull_cube.data.shape[1]):
         for b in range(hull_cube.data.shape[2]):
             
             imput_CH=hull_cube.data[:,a,b]
-        
-            CHBDI_1000=1 - (min(imput_CH))  #Finding the value of the band depth
+            imput_min1000=min1000.data[a,b]
+            pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
+            min1000p=int(pre_imput_min1000p)
+            
+            CHBDI_1000=1 - imput_CH[min1000p]  #Finding the value of the band depth
     
             stack_CHBDI.append(CHBDI_1000)
             
@@ -28,17 +32,21 @@ def CH_BDI (hull_cube):
 
 
 #BDII, band depth at 2000 nm with the convex hull method
-def CH_BDII (hull_cube):
+def CH_BDII (hull_cube, min2000,wavelengths3):
     cube_CHBDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
     stack_CHBDII=[]
     y,z=hull_cube[0,:,:].shape
+    wavelengths=wavelengths3[0:76]
     
     for a in range(hull_cube.data.shape[1]):
         for b in range(hull_cube.data.shape[2]):
             
             imput_CH=hull_cube.data[:,a,b]
+            imput_min2000=min2000.data[a,b]
+            pre_imput_min2000p=np.where(wavelengths==imput_min2000)[0]
+            min2000p=int(pre_imput_min2000p)
         
-            CHBDI_2000=1 - (min(imput_CH))  #Finding the value of the band depth
+            CHBDI_2000=1 - imput_CH[min2000p]  #Finding the value of the band depth
     
             stack_CHBDII.append(CHBDI_2000)
             
@@ -48,7 +56,7 @@ def CH_BDII (hull_cube):
 
 
 #SS1000, Spectral slope between maximun right shoulder and 540nm
-def SSI (fourier_cube, hull_cube, wavelengths):
+def SSI (fourier_cube, hull_cube,min1000, wavelengths):
     SSI=fourier_cube[0,:,:].copy()
     stack_SSI=[]
     y,z=hull_cube[0,:,:].shape
@@ -57,8 +65,11 @@ def SSI (fourier_cube, hull_cube, wavelengths):
         
             imput_SS1200=fourier_cube.data[:,a,b]
             imput_hull=hull_cube.data[:,a,b]
+            imput_min1000=min1000.data[a,b]
+            pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
+            min1000p=int(pre_imput_min1000p)
         
-            shoulder0p=np.where(imput_hull[0:20] == max(imput_hull[0:20]))[0][-1]  #Obtaining the position of the first shoudler
+            shoulder0p=np.where(imput_hull[0:min1000p] == max(imput_hull[0:min1000p]))[0][-1]  #Obtaining the position of the first shoudler
         
             SS=((imput_SS1200[shoulder0p])-imput_SS1200[0])/(((wavelengths[shoulder0p])-540.84)*imput_SS1200[0])  #Calculating the slope beetwen the R540 and the shoulder
             stack_SSI.append(SS)
@@ -207,16 +218,16 @@ def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
 
 
 #NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
-def CH_NIR (fourier_cube,hull_cube1000,hull_cube2000):
-    y1000,z1000=hull_cube1000[0,:,:].shape
-    y2000,z2000=hull_cube2000[0,:,:].shape
+def CH_NIR (fourier_cube,hull_cube):
+    y1000,z1000=hull_cube[0,:,:].shape
+    y2000,z2000=hull_cube[0,:,:].shape
     #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
     NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
     #NIR1=1 - hull_cube2000[15]
     
     #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
-    NIR2=hull_cube2000[0,:,:].copy()
-    NIR2_slice=hull_cube2000[9:30,:,:]  #Defines the section to iterate around 2000 nm
+    NIR2=hull_cube[0,:,:].copy()
+    NIR2_slice=hull_cube[49:70,:,:]  #Defines the section to iterate around 2000 nm
     stack_NIR2=[]
     
     for a in range(NIR2_slice.data.shape[1]):
@@ -224,7 +235,7 @@ def CH_NIR (fourier_cube,hull_cube1000,hull_cube2000):
             for c in range(NIR2_slice.data.shape[0]):
                 sum1=0
                 
-                imput_hull=hull_cube2000.data[:,a,b]
+                imput_hull=hull_cube.data[:,a,b]
             
                 sum1 += (1- imput_hull[c])  #Summatory
                 
@@ -234,8 +245,8 @@ def CH_NIR (fourier_cube,hull_cube1000,hull_cube2000):
     NIR2.data=stack_NIR2a.reshape(y2000,z2000)
     
      #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 1000 nm region
-    NIR3=hull_cube1000[0,:,:].copy()
-    NIR3_slice=hull_cube1000[8:34,:,:]  #Defines the section to iterate around 2000 nm
+    NIR3=hull_cube[0,:,:].copy()
+    NIR3_slice=hull_cube[8:34,:,:]  #Defines the section to iterate around 2000 nm
     stack_NIR3=[]
     
     for a in range(NIR3_slice.data.shape[1]):
@@ -243,7 +254,7 @@ def CH_NIR (fourier_cube,hull_cube1000,hull_cube2000):
             for c in range(NIR3_slice.data.shape[0]):
                 sum2=0
     
-                imput_hull4=hull_cube1000.data[:,a,b]
+                imput_hull4=hull_cube.data[:,a,b]
             
                 sum2 += (1-imput_hull4[c])
                 

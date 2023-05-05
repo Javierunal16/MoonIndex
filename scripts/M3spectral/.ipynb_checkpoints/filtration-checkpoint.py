@@ -10,7 +10,7 @@ def gauss_filter (cube_filter1,wavelen):
     tcube=np.transpose(cube_filter1.data,(2,1,0))  #Transposing data to ingest in Spec1d2
     
     spec1d2=Spectrum1D(spectral_axis=wavelen[0::]*u.AA, flux=tcube*u.dimensionless_unscaled)  #Transforming data in spec1d2 file type 
-    spec1d2_gsmooth=gaussian_smooth(spec1d2, stddev=2) #Filtering with a 1d gaussian function
+    spec1d2_gsmooth=gaussian_smooth(spec1d2, stddev=1) #Filtering with a 1d gaussian function, using 4 pixel kernel
     
     tcube_smooth=spec1d2_gsmooth.flux.value  #Slicing the filtered cube to avoid the affected data at longer wavelengths an attaching the original
     tslice1=tcube_smooth[:,:,0:79]
