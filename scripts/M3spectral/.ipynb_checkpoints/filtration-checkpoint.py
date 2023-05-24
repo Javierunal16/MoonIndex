@@ -23,12 +23,15 @@ def gauss_filter (cube_filter1,wavelen):
 
 
 #Fourier filtration
-def fourier_filter(gauss_cube,filter_width,filter_high):
+def fourier_filter(gauss_cube,percentage_width,percentage_high):
     
     fourier_cube=gauss_cube.copy()  #Creatign a new cube to put the final data
     rows,cols=gauss_cube[0,:,:].shape  #Getting dimension to do the mask
     mask= np.ones((rows, cols, 2), np.uint8)
     y2,z2=gauss_cube[0,:,:].shape
+    
+    filter_width=int((z2*((100-percentage_width)/100))/2) #Calclating the inut size of te box
+    filter_high=int((y2*(percentage_high/100))/2)
 
     cv2.rectangle(mask, (0,((y2//2)-filter_high)), (((z2//2)-filter_width),((y2//2)+filter_high)), 0, -1)  #Horizontals size of the fitler
     cv2.rectangle(mask, (((z2//2)+filter_width),((y2//2)-filter_high)), (z2,((y2//2)+filter_high)), 0, -1)  #Vertical size of the filter

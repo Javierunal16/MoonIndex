@@ -56,22 +56,19 @@ def CH_BDII (hull_cube, min2000,wavelengths3):
 
 
 #SS1000, Spectral slope between maximun right shoulder and 540nm
-def SSI (fourier_cube, hull_cube,min1000, wavelengths):
+def SSI (fourier_cube,shoulder1, wavelengths):
     SSI=fourier_cube[0,:,:].copy()
     stack_SSI=[]
-    y,z=hull_cube[0,:,:].shape
+    y,z=fourier_cube[0,:,:].shape
     for a in range(fourier_cube.data.shape[1]):
         for b in range(fourier_cube.data.shape[2]):
         
             imput_SS1200=fourier_cube.data[:,a,b]
-            imput_hull=hull_cube.data[:,a,b]
-            imput_min1000=min1000.data[a,b]
-            pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
-            min1000p=int(pre_imput_min1000p)
+            imput_shoulder1=shoulder1.data[a,b]
+            pre_shoulder1=np.where(wavelengths==imput_shoulder1)[0]
+            shoulder1p=int(pre_shoulder1)
         
-            shoulder0p=np.where(imput_hull[0:min1000p] == max(imput_hull[0:min1000p]))[0][-1]  #Obtaining the position of the first shoudler
-        
-            SS=((imput_SS1200[shoulder0p])-imput_SS1200[0])/(((wavelengths[shoulder0p])-540.84)*imput_SS1200[0])  #Calculating the slope beetwen the R540 and the shoulder
+            SS=((imput_SS1200[shoulder1p])-imput_SS1200[0])/(((wavelengths[shoulder1p])-540.84)*imput_SS1200[0])  #Calculating the slope beetwen the R540 and the shoulder
             stack_SSI.append(SS)
         
     stack_SSIa=np.array(stack_SSI)
@@ -222,8 +219,8 @@ def CH_NIR (fourier_cube,hull_cube):
     y1000,z1000=hull_cube[0,:,:].shape
     y2000,z2000=hull_cube[0,:,:].shape
     #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
-    NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
-    #NIR1=1 - hull_cube2000[15]
+    NIR1= 1 - (fourier_cube[55,:,:])/(((fourier_cube[70,:,:]-fourier_cube[39,:,:])/(2498-1408)*(1898-1408))+fourier_cube[39,:,:])
+
     
     #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
     NIR2=hull_cube[0,:,:].copy()

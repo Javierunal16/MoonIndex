@@ -5,14 +5,16 @@ import scipy as sp
 
 
 #Viewing a cube
-def cube_plot(cube_plot,band,size):
-    plot=cube_plot[band,:,:].plot.imshow(aspect=cube_plot.shape[2]/cube_plot.shape[1], size=size, robust=True)
+def cube_plot(cube_plot,band,size,title):
+    plot=cube_plot[band,:,:].plot.imshow(aspect=cube_plot.shape[2]/cube_plot.shape[1], size=size, robust=True,add_labels=False)
+    plt.title(title)
     return (plot)
 
 
 #Viewing an image
-def image_plot(image_imput,size2):
-    plot2=image_imput.plot.imshow(aspect=image_imput.shape[1]/image_imput.shape[0], size=size2, robust=True)
+def image_plot(image_imput,size2,title):
+    plot2=image_imput.plot.imshow(aspect=image_imput.shape[1]/image_imput.shape[0], size=size2, robust=True,add_labels=False)
+    plt.title(title)
     return (plot2)
 
 
@@ -27,7 +29,7 @@ def plot_comparison (cube_plot1, cube_plot2, title1, title2, band):
 
 
 #Fourier fitler images, it does the filter for one band to check visually
-def fourier_plot (gauss_filter2,fourie_cube2,band,filter_width2, filter_high2):
+def fourier_plot (gauss_filter2,fourie_cube2,band,percentage_width, percentage_high):
     fouraster2=cv2.dft(gauss_filter2.data[band,:,:], flags=cv2.DFT_COMPLEX_OUTPUT) 
     fouraster2_shift=np.fft.fftshift(fouraster2)
     magnitude_spectrum = 20 * np.log((cv2.magnitude(fouraster2_shift[:, :, 0], fouraster2_shift[:, :, 1])))  #For plotting
@@ -35,6 +37,9 @@ def fourier_plot (gauss_filter2,fourie_cube2,band,filter_width2, filter_high2):
     
     rows, cols =gauss_filter2[band,:,:].shape
     mask = np.ones((rows, cols, 2), np.uint8)
+    
+    filter_width2=int((z3*((100-percentage_width)/100))/2)
+    filter_high2=int((y3*(percentage_high/100))/2)
 
     #Valentine Mask
     cv2.rectangle(mask, (0,((y3//2)-filter_high2)), (((z3//2)-filter_width2),((y3//2)+filter_high2)), 0, -1)
@@ -73,7 +78,7 @@ def profiles_comparison(wavelenghts,raw_cube, gauss_cube,tittle1,tittle2, in_x, 
     for band in range(raw_cube.data.shape[0]):
         
         raw_cube2=raw_cube[band,:,:]
-        neighbourhood = raw_cube2[in_x-roi_minus:in_x+roi_plus, in_y-roi_minus:in_y+roi_plus]  #Slicing the data to the ROI
+        neighbourhood = raw_cube2[in_y-roi_minus:in_y+roi_plus, in_x-roi_minus:in_x+roi_plus]  #Slicing the data to the ROI
         average=np.mean(neighbourhood)  #Average of the pixels
         
         stack_averaw.append(average)
@@ -83,7 +88,7 @@ def profiles_comparison(wavelenghts,raw_cube, gauss_cube,tittle1,tittle2, in_x, 
     for band in range(gauss_cube.data.shape[0]):  #Same for the filtered profile
         
         gauss_cube2=gauss_cube[band,:,:]  
-        neighbourhood2 = gauss_cube2[in_x-roi_minus:in_x+roi_plus, in_y-roi_minus:in_y+roi_plus]
+        neighbourhood2 = gauss_cube2[in_y-roi_minus:in_y+roi_plus, in_x-roi_minus:in_x+roi_plus]
         average2=np.mean(neighbourhood2)
         
         stack_avegauss.append(average2)
@@ -152,22 +157,12 @@ def filter_comaprison (cube_1,cube_2,title1,title2,band):
 
 
 #Convex hull plotting
-def convexhull_plot(fourier_cube, wavelengths,mid_point,x_hull,y_hull,roi):
+def convexhull_plot(fourier_cube, wavelengths_full,mid_point,y_hull,x_hull):
+
+    wavelengths=wavelengths_full[0:76]
+    average4=fourier_cube[0:76,x_hull,y_hull]
     
-    stack_averaw=[]
-    roi_plus2=int((roi/2)+0.5)  #Definign the window
-    roi_minus2=int((roi/2)-0.5)
-    
-    for band in range(fourier_cube.data.shape[0]):
-        
-        profile_singlecube3=fourier_cube[band,:,:]
-        neighbourhood4 = profile_singlecube3[x_hull-roi_minus2:x_hull+roi_plus2, y_hull-roi_minus2:y_hull+roi_plus2]  #Slicing the data to the ROI
-        average4=np.mean(neighbourhood4)  #Average of the pixels
-        
-        stack_averaw.append(average4)
-    average4=np.array(stack_averaw)
-    
-    add_point=np.where(wavelengths==mid_point[x_hull,y_hull])[0],
+    add_point=np.where(wavelengths==mid_point[x_hull,y_hull])[0]
     add_array2=np.vstack((wavelengths[add_point], fourier_cube[add_point,x_hull,y_hull])).T
     
     points = np.c_[wavelengths, average4]
@@ -175,12 +170,12 @@ def convexhull_plot(fourier_cube, wavelengths,mid_point,x_hull,y_hull,roi):
     augmented = np.concatenate([points, [(wavelengths[0], np.min(average4)-1), (wavelengths[-1], np.min(average4)-1)]], axis=0)
     hull = sp.spatial.ConvexHull(augmented)
     pre_continuum_points2 = points[np.sort([v for v in hull.vertices if v < len(points)])]
-    pre_continuum_points2 = np.concatenate((pre_continuum_points2,add_array2), axis=0)
-    pre_continuum_points2.sort(axis=0)
-    continuum_points2=np.unique(pre_continuum_points2,axis=0)
+    pre_continuum_points22 = np.concatenate((pre_continuum_points2,add_array2), axis=0)
+    pre_continuum_points22.sort(axis=0)
+    continuum_points2=np.unique(pre_continuum_points22,axis=0)
     continuum_function2 = sp.interpolate.interp1d(*continuum_points2.T)
     average4_prime = average4 / continuum_function2(wavelengths)
-    average4_prime[average4 >= 1]= 1
+    average4_prime[average4_prime >= 1]= 1
     
     fig, axes = plt.subplots(2, 1, sharex=True)
     axes[0].plot(wavelengths, average4, label='Data')
