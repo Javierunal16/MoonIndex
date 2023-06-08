@@ -8,11 +8,11 @@ def R540 (fourier_cube):
     return cube_R540
 
 #BDI, band depth at 1000 nm with the convex hull method
-def CH_BDI (hull_cube,min1000,wavelengths3):
+def BDI (hull_cube,min1000,wavelengths3):
     cube_CHBDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
     stack_CHBDI=[]
     y,z=hull_cube[0,:,:].shape
-    wavelengths=wavelengths3[0:76]
+    wavelengths=wavelengths3[0:74]
     
     for a in range(hull_cube.data.shape[1]):
         for b in range(hull_cube.data.shape[2]):
@@ -32,11 +32,11 @@ def CH_BDI (hull_cube,min1000,wavelengths3):
 
 
 #BDII, band depth at 2000 nm with the convex hull method
-def CH_BDII (hull_cube, min2000,wavelengths3):
+def BDII (hull_cube, min2000,wavelengths3):
     cube_CHBDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
     stack_CHBDII=[]
     y,z=hull_cube[0,:,:].shape
-    wavelengths=wavelengths3[0:76]
+    wavelengths=wavelengths3[0:74]
     
     for a in range(hull_cube.data.shape[1]):
         for b in range(hull_cube.data.shape[2]):

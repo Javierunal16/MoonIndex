@@ -29,7 +29,7 @@ def plot_comparison (cube_plot1, cube_plot2, title1, title2, band):
 
 
 #Fourier fitler images, it does the filter for one band to check visually
-def fourier_plot (gauss_filter2,fourie_cube2,band,percentage_width, percentage_high):
+def fourier_plot (gauss_filter2,band,percentage_width, percentage_high):
     fouraster2=cv2.dft(gauss_filter2.data[band,:,:], flags=cv2.DFT_COMPLEX_OUTPUT) 
     fouraster2_shift=np.fft.fftshift(fouraster2)
     magnitude_spectrum = 20 * np.log((cv2.magnitude(fouraster2_shift[:, :, 0], fouraster2_shift[:, :, 1])))  #For plotting
@@ -65,7 +65,7 @@ def fourier_plot (gauss_filter2,fourie_cube2,band,percentage_width, percentage_h
     ax3.imshow(mshift_mask_mag)
     ax3.title.set_text('Fourier + Mask')
     ax4 = fig.add_subplot(2,2,4)
-    ax4.imshow(fourie_cube2.data[band,:,:])
+    ax4.imshow(return_raster2.data)
     ax4.title.set_text('After inverse Fourier')
     
 
