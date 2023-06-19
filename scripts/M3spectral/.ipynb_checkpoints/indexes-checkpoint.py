@@ -7,6 +7,7 @@ def R540 (fourier_cube):
     cube_R540=fourier_cube[0,:,:]  #The first band corresponds to that wavelength
     return cube_R540
 
+
 #BDI, band depth at 1000 nm with the convex hull method
 def BDI (hull_cube,min1000,wavelengths3):
     cube_CHBDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
@@ -55,6 +56,18 @@ def BDII (hull_cube, min2000,wavelengths3):
     return cube_CHBDII
 
 
+#Olivine detection index
+def olivine (fourier_filter):
+    ol=(((fourier_filter[50,:,:]/((0.1*fourier_filter[21,:,:])+(0.1*fourier_filter[29,:,:])+(0.4*fourier_filter[35,:,:])+(0.4*fourier_filter[42,:,:])))-1))
+    return ol
+
+
+#Anorthosite detection index
+def spinel (gauss_cube):
+    sp1=((((gauss_cube[31,:,:]-gauss_cube[6,:,:])/500)*1350)+(gauss_cube[31,:,:]))/gauss_cube[73,:,:]
+    return sp1
+
+
 #SS1000, Spectral slope between maximun right shoulder and 540nm
 def SSI (fourier_cube,shoulder1, wavelengths):
     SSI=fourier_cube[0,:,:].copy()
@@ -86,6 +99,16 @@ def clementine (fourier_cube):
     return clem
 
 
+#Anorthosite detection index
+def RGB_spanpx (gauss_cube):
+    spanpx=gauss_cube[0:3,:,:].copy()  
+    px=(gauss_cube[4,:,:]+gauss_cube[29,:,:])/gauss_cube[16,:,:]
+    sp=gauss_cube[39,:,:]/gauss_cube[51,:,:]
+    an=(gauss_cube[19,:,:]+gauss_cube[44,:,:])/gauss_cube[31,:,:]
+    spanpx.data=np.dstack((px,sp,an)).transpose(2,0,1)
+    return spanpx
+
+
 #RGB1. R: SSI, G: BDI, B: BDII
 def RGB1 (fourier_cube,SSI_cube,BDI_cube,BII_cube):
     RGB1=fourier_cube[0:3,:,:].copy()
@@ -106,12 +129,6 @@ def RGB3 (gauss_cub,SSI_cube,R540_cube,BCI_cube):
     RGB3=gauss_cub[0:3,:,:].copy()
     RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
     return RGB3
-
-
-#Olivine detection index
-def olivine (fourier_filter):
-    ol=(((fourier_filter[50,:,:]/((0.1*fourier_filter[21,:,:])+(0.1*fourier_filter[29,:,:])+(0.4*fourier_filter[35,:,:])+(0.4*fourier_filter[42,:,:])))-1))
-    return ol
 
 
 #RGB4. R:BCI, G: BCII, B:BAI, this index combines the band centers wit the band area at 1000 nm
@@ -215,11 +232,11 @@ def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
 
 
 #NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
-def CH_NIR (fourier_cube,hull_cube):
+def NIR (fourier_cube,hull_cube):
     y1000,z1000=hull_cube[0,:,:].shape
     y2000,z2000=hull_cube[0,:,:].shape
     #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
-    NIR1= 1 - (fourier_cube[55,:,:])/(((fourier_cube[70,:,:]-fourier_cube[39,:,:])/(2498-1408)*(1898-1408))+fourier_cube[39,:,:])
+    NIR1= 1 - (hull_cube[55,:,:])
 
     
     #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
@@ -229,10 +246,10 @@ def CH_NIR (fourier_cube,hull_cube):
     
     for a in range(NIR2_slice.data.shape[1]):
         for b in range(NIR2_slice.data.shape[2]):
+            sum1=0
             for c in range(NIR2_slice.data.shape[0]):
-                sum1=0
                 
-                imput_hull=hull_cube.data[:,a,b]
+                imput_hull=NIR2_slice.data[:,a,b]
             
                 sum1 += (1- imput_hull[c])  #Summatory
                 
@@ -248,10 +265,10 @@ def CH_NIR (fourier_cube,hull_cube):
     
     for a in range(NIR3_slice.data.shape[1]):
         for b in range(NIR3_slice.data.shape[2]):
+            sum2=0
             for c in range(NIR3_slice.data.shape[0]):
-                sum2=0
     
-                imput_hull4=hull_cube.data[:,a,b]
+                imput_hull4=NIR3_slice.data[:,a,b]
             
                 sum2 += (1-imput_hull4[c])
                 
@@ -264,7 +281,6 @@ def CH_NIR (fourier_cube,hull_cube):
     NIR_total=fourier_cube[0:3,:,:].copy()
     NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
     return NIR_total
-
 
 
 ##INDEXES WITH THE LIENAR FIT REMOVAL METHOD
@@ -324,7 +340,7 @@ def LFBDII (fourier_cube, hull_cube, wavelengths):
 
 
 #NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
-def NIR (fourier_cube,hull_cube,wavelengths):
+def NIR_LF (fourier_cube,hull_cube,wavelengths):
     y,z=hull_cube[0,:,:].shape
     #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
     NIR1=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))

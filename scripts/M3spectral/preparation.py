@@ -89,23 +89,21 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths2):
             pre_midpointp=np.where(wavelengths==imput_midpoint)[0]
             midpointp=int(pre_midpointp)
             
-            minimum_1000=np.where(imput_hull[0:midpointp] == min(imput_hull[0:midpointp]))[0]  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
-            value_1000=wavelengths[minimum_1000]
+            minimum_1000=np.argmin(imput_hull[0:midpointp])  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
             ofset=5
             fitxp=minimum_1000-ofset  #This creates a window around the minimum in the convex hull to do a posteriro fit
             fitxp=max(0,fitxp)  #If the value is minor to 0, it converts it to 0
-            fitxp2=minimum_1000+ofset 
-            fitxp2[fitxp2 > midpointp]= midpointp+1  #The +1 is to avoid that th resulting array is at the midpoint
+            fitxp2=np.array(minimum_1000+ofset) 
+            fitxp2[fitxp2 > midpointp]= midpointp-1  #The -1 is to avoid that the resulting array is at the midpoint
             fitx=wavelengths[int(fitxp):int(fitxp2)]
             fity=imput_hull[int(fitxp):int(fitxp2)]
             fit_1000=np.polyfit(fitx,fity,2)  #Creates a second order fit aroud the minimum
-            polyval_1000=np.polyval(fit_1000,wavelengths[int(fitxp):int(minimum_1000+ofset+1)])
-            min1000p=np.where(polyval_1000== min(polyval_1000))[0]  #FInds the minimum in the fit, this reduce the noise of the final data
+            polyval_1000=np.polyval(fit_1000,wavelengths[int(fitxp):int(fitxp2)])
+            min1000p=np.where(polyval_1000== min(polyval_1000))[0]  #Finds the minimum in the fit, this reduce the noise of the final data
             final_1000=wavelengths[min1000p+fitxp]
             stack_min1000.append(final_1000[0])
             
-            minimum_2000=np.where(imput_hull[midpointp:74] == min(imput_hull[midpointp:74]))[0]+midpointp
-            value_2000=wavelengths[minimum_2000]
+            minimum_2000=np.argmin(imput_hull[midpointp:74])+midpointp  #This one does not need specific defintion of indexes vecause there is no risk of ocerlap with the midpoint
             fit_2000=np.polyfit(wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset)],imput_hull[int(minimum_2000-ofset):int(minimum_2000+ofset)],2)
             polyval_2000=np.polyval(fit_2000,wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset+1)])
             min2000p=np.where(polyval_2000== min(polyval_2000))[0]
@@ -152,7 +150,6 @@ def find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):
             
 
             shoulder_0=np.where(imput_hull_shoulder[0:min1000p] == max(imput_hull_shoulder[0:min1000p]))[0][-1]  # Works similar to the maximums, but the last argument ensures than only the last value is returned
-            value_0=wavelengths[shoulder_0]
             ofset=3
             fitxp0=shoulder_0-ofset  #This creates a window around the maximum in the convex hull to do a posterior fit
             fitxp0=max(0, fitxp0) #If the value is minor to 0, it converts it to 0
@@ -165,7 +162,6 @@ def find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):
             stack_shoulder0.append(final_0)
 
             shoulder_1=np.where(imput_hull_shoulder[min1000p:midpoint_shoulderp] == max(imput_hull_shoulder[min1000p:midpoint_shoulderp]))[0][-1]+min1000p
-            value_1=wavelengths[shoulder_1]
             fitxp1=shoulder_1-ofset
             fitxp1=max(0,fitxp1)
             fit_1=np.polyfit(wavelengths[int(fitxp1):int(shoulder_1+ofset)],imput_hull_shoulder[int(fitxp1):int(shoulder_1+ofset)],2)
@@ -267,8 +263,7 @@ def continuum_removal_lf (gauss_cube,wavelengths2):
     
     return(lf)
 
-#Finding the minimuums with the lienar fit method
-
+#Finding the minimuums with the linear fit method
 def find_minimuumslf (lf_cube,wavelengths):
     min_1000lf=lf_cube[0,:,:].copy()  #Saving the filtered data in a new cube, copied from the original to maintain the projection
     stack_min_1000lf=[]
@@ -284,20 +279,25 @@ def find_minimuumslf (lf_cube,wavelengths):
             minimum_1000lf=np.argmin(min_lf[7:39])+7  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
             ofsetlf=5
             fitxplf=minimum_1000lf-ofsetlf  #This creates a window around the minimum in the convex hull to do a posteriro fit
-            fitxp2lf=minimum_1000lf+ofsetlf 
+            fitxp2lf=np.array(minimum_1000lf+ofsetlf)
+            fitxp2lf[fitxp2lf > 39]= 38
             fitxlf=wavelengths[int(fitxplf):int(fitxp2lf)]
             fitylf=min_lf[int(fitxplf):int(fitxp2lf)]
             fit_1000lf=np.polyfit(fitxlf,fitylf,2)  #Creates a second order fit aroud the minimum
-            polyval_1000lf=np.polyval(fit_1000lf,wavelengths[int(fitxplf):int(minimum_1000lf+ofsetlf+1)])
+            polyval_1000lf=np.polyval(fit_1000lf,wavelengths[int(fitxplf):int(fitxp2lf)])
             min1000plf=np.argmin(polyval_1000lf)  #Finds the minimum in the fit, this reduce the noise of the final data
             final_1000lf=wavelengths[min1000plf+fitxplf]
             stack_min_1000lf.append(final_1000lf)
             
             minimum_2000lf=np.argmin(min_lf[39:74])+39
-            fit_2000lf=np.polyfit(wavelengths[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf)],min_lf[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf)],2)
+            min2000=minimum_2000lf+ofsetlf
+            if min2000 > 73: min2000=73
+            fit_2000lf=np.polyfit(wavelengths[int(minimum_2000lf-ofsetlf):int(min2000)],min_lf[int(minimum_2000lf-ofsetlf):int(min2000)],2)
             polyval_2000lf=np.polyval(fit_2000lf,wavelengths[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf+1)])
             min2000plf=np.argmin(polyval_2000lf)
-            final_2000lf=wavelengths[min2000plf+minimum_2000lf-ofsetlf]
+            wave_index2000=min2000plf+minimum_2000lf-ofsetlf
+            if wave_index2000 > 73: wave_index2000=73
+            final_2000lf=wavelengths[wave_index2000]
             stack_min_2000lf.append(final_2000lf)
     
     
@@ -345,10 +345,12 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
             final_0lf=wavelengths[max0plf+fitxp0lf]
             stack_shoulder0lf.append(final_0lf)
 
-            shoulder_1lf=np.where(imput_shoulderlf[min1000plf:min2000plf] == max(imput_shoulderlf[min1000plf:min2000plf]))[0][-1]+min1000plf
+            shoulder_1lf=np.where(imput_shoulderlf[min1000plf:min2000plf+1] == max(imput_shoulderlf[min1000plf:min2000plf+1]))[0][-1]+min1000plf
+            maxs1=shoulder_1lf+ofsetlf
+            if maxs1 > 74: maxs1=74
             fitxp1lf=shoulder_1lf-ofsetlf
             fitxp1lf=max(0,fitxp1lf)
-            fit_1lf=np.polyfit(wavelengths[int(fitxp1lf):int(shoulder_1lf+ofsetlf)],imput_shoulderlf[int(fitxp1lf):int(shoulder_1lf+ofsetlf)],2)
+            fit_1lf=np.polyfit(wavelengths[int(fitxp1lf):int(maxs1)],imput_shoulderlf[int(fitxp1lf):int(maxs1)],2)
             polyval_1lf=np.polyval(fit_1lf,wavelengths[int(fitxp1lf):int(shoulder_1lf+ofsetlf+1)])
             max1plf=np.where(polyval_1lf== max(polyval_1lf))[0]
             final_1lf=wavelengths[max1plf+fitxp1lf]
