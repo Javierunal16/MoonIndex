@@ -1,10 +1,114 @@
 import numpy as np
 import M3spectral.preparation
+import xarray as xa
+
+
+#Calcualtes all the indexes for the convex hull method
+def indexes_total_CH(gauss_cube,midpoint_cube,hull_cube,wavelengths):
+    
+    indexes_total=gauss_cube[0:19,:,:].copy()
+        
+    #Creating the minimums for the convex hull method
+    M3_min1000ch, M3_min2000ch=M3spectral.preparation.find_minimums_ch(hull_cube,midpoint_cube,wavelengths)
+    #Obtaining the shoulders for the convex hull method
+    M3_shoulder0ch, M3_shoul1ch, M3_shoulder2ch, M3_shoulder3ch=M3spectral.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
+
+    #General indexes
+    #R540, reflectance at 540 nm (Zambon et al., 2020)
+    M3_R540=R540(gauss_cube) 
+    #Spinel detection index (Moriarty III et al. 2022)
+    M3_sp=spinel(gauss_cube)  
+    #Olivine detection index  (Corley et al., 2018)
+    M3_ol=olivine(gauss_cube)  
+    #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
+    M3_clem=clementine(gauss_cube)
+    #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
+    M3_spanpx=RGB_spanpx(gauss_cube)
+
+    #Convex hull indexes
+    #BDI, band depth at 1000 nm with the convex hull method
+    M3_BDI_CH=BDI(hull_cube,M3_min1000ch,wavelengths)
+    #BDII, band depth at 2000 nm with the convex hull method
+    M3_BDII_CH=BDII(hull_cube,M3_min2000ch,wavelengths)
+    #SS1000, Spectral slope between maximun right shoulder and 540nm
+    M3_SSI_CH=SSI(gauss_cube,M3_shoulder1ch,wavelengths) 
+    #NIR. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
+    M3_NIR_CH=NIR(gauss_cube,hull_cube)
+    #BAI1000
+    M3_BAI1000_CH=BA1000(hull_cube,wavelengths,M3_shoulder0ch,M3_shoulder1ch)
+    #ASY1000
+    M3_ASY1000_CH=ASY1000(hull_cube,wavelengths,M3_shoulder0ch, M3_shoulder1ch,M3_min1000ch)
+    
+    #Creatinh the output cube
+    indexes_total.data=np.dstack((M3_R540,M3_sp,M3_ol,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_min1000ch,M3_min2000ch,M3_BDI_CH,M3_BDII_CH,M3_SSI_CH,
+                             M3_NIR_CH[0],M3_NIR_CH[1],M3_NIR_CH[2],M3_BAI1000_CH,M3_ASY1000_CH)).transpose(2,0,1)
+    
+    #Giv name to the bands
+    bands = ['Reflectance 540 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter',
+             'Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1000 nm CH','Band center 2000 nm CH','Band depth 1000 nm CH','Band depth 2000 nm CH',
+             'Spectral slope 1000 nm CH','Band depth 1900 CH','Integrated band depth 2000 nm CH', 'Integrated band depth 1000 nm CH','Band area 1000 nm CH','Band assymetry 1000 nm CH']
+    indexes_final_ch=xa.Dataset()
+
+    for e in range(19):
+        indexes_final_ch[bands[e]] = indexes_total[e,:,:]
+        
+    return(indexes_final_ch)
+
+
+#All the indexes for the lienar fit method
+def indexes_total_LF(gauss_cube,lf_cube,wavelengths):
+    
+    indexes_total=gauss_cube[0:19,:,:].copy()
+        
+    #General indexes
+    #R540, reflectance at 540 nm (Zambon et al., 2020)
+    M3_R540=R540(gauss_cube) 
+    #Spinel detection index (Moriarty III et al. 2022)
+    M3_sp=spinel(gauss_cube)  
+    #Olivine detection index  (Corley et al., 2018)
+    M3_ol=olivine(gauss_cube)  
+    #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
+    M3_clem=clementine(gauss_cube)
+    #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
+    M3_spanpx=RGB_spanpx(gauss_cube)
+    
+    #Creating the minimmums with the linear fit method
+    M3_min1000lf,M3_min2000lf=M3spectral.preparation.find_minimuumslf(lf_cube,wavelengths)
+    M3_shoulder0lf,M3_shoulder1lf,M3_shoulder2lf=M3spectral.preparation.find_shoulders_lf(lf_cube,M3_min1000lf,M3_min2000lf,wavelengths)
+    
+    #Linear fit indexes
+    #BDI, band depth at 1000 nm with the convex hull method
+    M3_BDI_LF=BDI(lf_cube,M3_min1000lf,wavelengths)
+    #BDII, band depth at 2000 nm with the convex hull method
+    M3_BDII_LF=BDII(lf_cube,M3_min2000lf,wavelengths)
+    #SS1000, Spectral slope between maximun right shoulder and 540nm
+    M3_SSI_LF=SSI(gauss_cube,M3_shoulder1lf,wavelengths) 
+    #NIR. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
+    M3_NIR_LF=NIR(gauss_cube,lf_cube)
+    #BAI1000
+    M3_BAI1000_LF=BA1000(lf_cube,wavelengths,M3_shoulder0lf,M3_shoulder1lf)
+    #ASY1000
+    M3_ASY1000_LF=ASY1000(lf_cube,wavelengths,M3_shoulder0lf, M3_shoulder1lf,M3_min1000lf)
+    
+    #Creatinh the output cube
+    
+    indexes_total.data=np.dstack((M3_R540,M3_sp,M3_ol,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_min1000lf,M3_min2000lf,
+                                  M3_BDI_LF,M3_BDI_LF,M3_SSI_LF,M3_NIR_LF[0],M3_NIR_LF[1],M3_NIR_LF[2],M3_BAI1000_LF,M3_ASY1000_LF)).transpose(2,0,1)
+    
+    #Give name to the bands
+    bands = ['Reflectance 540 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1000 nm LF','Band center 2000 nm LF','Band depth 1000 nm LF','Band depth 2000 nm LF','Spectral slope 1000 nm LF','Band depth 1900 LF','Integrated band depth 2000 nm LF', 'Integrated band depth 1000 nm LF','Band area 1000 nm LF','Band assymetry 1000 nm LF']
+    indexes_final_lf=xa.Dataset()
+
+    for e in range(19):
+        indexes_final_lf[bands[e]] = indexes_total[e,:,:]
+
+    return(indexes_final_lf)
 
 
 #R540, reflectance at 540 nm
 def R540 (fourier_cube):
     cube_R540=fourier_cube[0,:,:]  #The first band corresponds to that wavelength
+    cube_R540.data[cube_R540.data==0]=np.nan
     return cube_R540
 
 
@@ -96,16 +200,18 @@ def clementine (fourier_cube):
     B2=fourier_cube[6,:,:]/fourier_cube[19,:,:]
     B3=fourier_cube[0,:,:]/fourier_cube[6,:,:]
     clem.data=np.dstack((B1,B2,B3)).transpose(2,0,1)
+    clem.data[clem.data > 3]=0
     return clem
 
 
-#Anorthosite detection index
+#Anorthosite,spinela and pyroxene detection index
 def RGB_spanpx (gauss_cube):
     spanpx=gauss_cube[0:3,:,:].copy()  
     px=(gauss_cube[4,:,:]+gauss_cube[29,:,:])/gauss_cube[16,:,:]
     sp=gauss_cube[39,:,:]/gauss_cube[51,:,:]
     an=(gauss_cube[19,:,:]+gauss_cube[44,:,:])/gauss_cube[31,:,:]
     spanpx.data=np.dstack((px,sp,an)).transpose(2,0,1)
+    spanpx.data[clem.data > 3]=0
     return spanpx
 
 
@@ -129,6 +235,40 @@ def RGB3 (gauss_cub,SSI_cube,R540_cube,BCI_cube):
     RGB3=gauss_cub[0:3,:,:].copy()
     RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
     return RGB3
+
+
+#BAI1000
+def BA1000 (hull_cube,wavelengths,shoulder0,shoulder1):
+    y,z=fourier_cube[0,:,:].shape
+    SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
+    SR=np.append(39.92,SR)   #Adding the first value
+
+    #Calculating the band area
+    BAI=fourier_cube[0,:,:].copy()
+    stack_BAI=[]
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            s0 = shoulder0.data[a,b]  #The shoulders limits the area calculation
+            s1 = shoulder1.data[a,b]
+        
+            start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
+            end = np.where(wavelengths == s1)[0][0].item()
+        
+           
+            imput_SR= SR[start:end]
+            imput_CCA= hull_cube.data[:,a,b]
+            
+            sum3=0
+            for c in range(start, end):
+                
+                sum3 += ((1 - imput_CCA[c-start]) * imput_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
+                
+            stack_BAI.append(sum3)
+        
+    stack_BAIa=np.array(stack_BAI)
+    BAI.data=stack_BAIa.reshape(y,z)
+    return BAI
 
 
 #RGB4. R:BCI, G: BCII, B:BAI, this index combines the band centers wit the band area at 1000 nm
@@ -167,6 +307,66 @@ def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000
     CCA=fourier_cube[0:3,:,:].copy()
     CCA.data=np.dstack((minimum_1000,minimum_2000,BAI)).transpose(2,0,1)
     return CCA
+
+
+#Asimetry 1000 nm
+def ASY1000 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000):
+    SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
+    SR=np.append(39.92,SR)   #Adding the first value
+    
+    #Caculating the asymmetry
+    y,z=fourier_cube[0,:,:].shape
+    ASY=fourier_cube[0,:,:].copy()
+
+    stack_ASY1=[]
+    stack_ASY2=[]
+    for a in range(fourier_cube.data.shape[1]):
+        for b in range(fourier_cube.data.shape[2]):
+            
+            s00 = shoulder0.data[a,b]  #The asimmetry is also calculated inside the shoulders
+            s11 = shoulder1.data[a,b]
+            input_min1000=min1000.data[a,b]
+
+            start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
+            end1 = np.where(wavelengths == s11)[0][0].item()
+            middle=np.where(wavelengths == input_min1000)[0][0].item()
+           
+            imput_SR1= SR[start1:middle]
+            imput_SR2= SR[middle:end1]
+            imput_CCA= fourier_cube.data[:,a,b]
+            
+            sum4=0
+            for c in range(start1, middle):
+                
+                sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
+                
+            stack_ASY1.append(sum4)
+            
+            
+            sum5=0
+            for d in range(middle, end1):
+                
+                sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                
+            stack_ASY2.append(sum5)         
+            
+    #Asimetry calculation
+    sum_ASY=np.add(stack_ASY1,stack_ASY2)  #Calcualting the total area
+    stack_ASY3=[]
+
+    for a in range(len(stack_ASY2)):
+                
+        if stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
+                    
+            stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  #The asymmetry is the difference beetwen the two areas when dividing the peak in half, it is given in as a pecentage of the total area
+                    
+        else:  #If the right side area is bigger, the asmmetry is positive
+                
+            stack_ASY3.append((stack_ASY2[a]-stack_ASY1[a])*100/sum_ASY[a])
+
+    stack_ASY3a=np.array(stack_ASY3)
+    ASY.data=stack_ASY3a.reshape(y,z)
+    return ASY
 
 
 #RGB5. R:ASY, G:BCI, B: BCII, this index combines the band asymmetry at 1000 with the center at 2000 and the band area at 1000

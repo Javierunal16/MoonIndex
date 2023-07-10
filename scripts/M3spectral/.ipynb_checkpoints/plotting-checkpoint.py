@@ -2,18 +2,32 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import scipy as sp
+from sklearn.preprocessing import MinMaxScaler
 
 
 #Viewing a cube
-def cube_plot(cube_plot,band,size,title):
-    plot=cube_plot[band,:,:].plot.imshow(aspect=cube_plot.shape[2]/cube_plot.shape[1], size=size, robust=True,add_labels=False)
+def cube_plot(cube_plot,size,title):
+
+    cube_plot1=cube_plot[:,:,:].copy()
+    x2,y2,z2=cube_plot[:,:,:].shape
+    scaled=[]
+    scaler=MinMaxScaler(feature_range=(0, 255))
+    for band in range(cube_plot.data.shape[0]):
+    
+        scaledRGB=scaler.fit_transform(cube_plot.data[band,:,:])
+        scaled.append(scaledRGB)
+            
+    scaleda=np.array(scaled)
+    cube_plot1.data=scaleda.reshape(x2,y2,z2)
+    
+    plot=cube_plot1.plot.imshow(aspect=cube_plot1.shape[2]/cube_plot1.shape[1], size=size,add_labels=False, robust=True)
     plt.title(title)
     return (plot)
 
 
 #Viewing an image
 def image_plot(image_imput,size2,title):
-    plot2=image_imput.plot.imshow(aspect=image_imput.shape[1]/image_imput.shape[0], size=size2, robust=True,add_labels=False)
+    plot2=image_imput.plot.imshow(aspect=image_imput.shape[1]/image_imput.shape[0], size=size2, robust=True,add_labels=False, cmap='Spectral')
     plt.title(title)
     return (plot2)
 
@@ -70,37 +84,35 @@ def fourier_plot (gauss_filter2,band,percentage_width, percentage_high):
     
 
 #Profile comparisons
-def profiles_comparison(wavelenghts,raw_cube, gauss_cube,tittle1,tittle2, in_x, in_y,roi):
+def profiles_comparison(wavelengths,first_cube, second_cube,tittle1,tittle2, in_x, in_y,roi):
 
     stack_averaw=[]  
     roi_plus=int((roi/2)+0.5)  #Definign the window
     roi_minus=int((roi/2)-0.5)
-    for band in range(raw_cube.data.shape[0]):
+    for band in range(first_cube.data.shape[0]):
         
-        raw_cube2=raw_cube[band,:,:]
+        raw_cube2=first_cube[band,:,:]
         neighbourhood = raw_cube2[in_y-roi_minus:in_y+roi_plus, in_x-roi_minus:in_x+roi_plus]  #Slicing the data to the ROI
         average=np.mean(neighbourhood)  #Average of the pixels
         
         stack_averaw.append(average)
-    raw_average=np.array(stack_averaw)
+    first_average=np.array(stack_averaw)
     
     stack_avegauss=[]
-    for band in range(gauss_cube.data.shape[0]):  #Same for the filtered profile
+    for band in range(second_cube.data.shape[0]):  #Same for the filtered profile
         
-        gauss_cube2=gauss_cube[band,:,:]  
+        gauss_cube2=second_cube[band,:,:]  
         neighbourhood2 = gauss_cube2[in_y-roi_minus:in_y+roi_plus, in_x-roi_minus:in_x+roi_plus]
         average2=np.mean(neighbourhood2)
         
         stack_avegauss.append(average2)
-    gauss_average=np.array(stack_avegauss)
+    second_average=np.array(stack_avegauss)
     
-    fig3, (ax22, ax23)=plt.subplots(1,2,figsize=(10,3))  #Plotting
-    ax22.plot(wavelenghts, raw_average)
-    ax22.title.set_text(tittle1)
-    ax23.plot(wavelenghts, gauss_average, color='red')
-    ax23.title.set_text(tittle2)
-    
-    return plt.show(fig3)
+    plt.plot(wavelengths[0:len(first_average)], first_average, label=tittle1)
+    plt.plot(wavelengths[0:len(second_average)],second_average, label=tittle2)
+    plt.legend()
+    plt.title("Profife comparison")
+    return plt.show()
 
 
 #Single profile
@@ -143,7 +155,8 @@ def filter_comaprison (cube_1,cube_2,title1,title2,band):
     change_ratio=ratio_plus*ratio_minus
     change_ratio.data[change_ratio.data < 0]= 0
 
-    fig4, axs = plt.subplots(ncols=2,nrows=2,figsize=(cube_1.shape[2]/cube_1.shape[1]*15,15))  #Plotting
+    fig4, axs = plt.subplots(ncols=2,nrows=2,figsize=(cube_1.shape[2]/cube_1.shape[1]*20,20))  #Plotting
+    plt.subplots_adjust(wspace=1.5)
     cube_1[band,:,:].plot.imshow(ax=axs[0,0],add_labels=False)
     axs[0,0].title.set_text(title1)
     cube_2[band,:,:].plot.imshow(ax=axs[0,1],add_labels=False)
@@ -182,6 +195,38 @@ def convexhull_plot(fourier_cube, wavelengths_full,mid_point,y_hull,x_hull):
     axes[0].plot(*continuum_points2.T, label='Continuum')
     axes[0].legend()
     axes[1].plot(wavelengths, average4_prime, label='Data / Continuum')
+    axes[1].legend()
+
+    return plt.show()
+
+
+#Linear fit method
+def linerfit_plot(gauss_cube, removed_cube, wavelengths,y_plot,x_plot):    
+    
+    lf_cube=gauss_cube.data[0:74,x_plot,y_plot]  #Second order fit for 1000 nm, it used a range for the two shoudlers around the 1000 nm absorption
+    fitx10001=wavelengths[1:7]
+    fitx10002=wavelengths[39:42]
+    fitx1000=np.hstack((fitx10001,fitx10002))
+    fity10001=lf_cube[1:7]
+    fity10002=lf_cube[39:42]
+    fity1000=np.hstack((fity10001,fity10002))
+    fit1000=np.polyfit(fitx1000,fity1000,2)
+    polival1000=np.polyval(fit1000,wavelengths[0:42])
+
+    fitx2000=np.hstack((fitx10002,wavelengths[73])) #Fit for 2000 nm, linear
+    fity2000=np.hstack((fity10002,lf_cube[73]))
+    fit2000=np.polyfit(fitx2000,fity2000,1)
+    polival2000=np.polyval(fit2000,wavelengths[42:74])
+
+    continuum=np.hstack((polival1000,polival2000))  #Continuum removal by dividing
+    
+    continum_removed=removed_cube[:,x_plot,y_plot]
+    
+    fig, axes = plt.subplots(2, 1, sharex=True)
+    axes[0].plot(wavelengths[0:74], lf_cube, label='Data')
+    axes[0].plot(wavelengths[0:74],continuum, label='Continuum')
+    axes[0].legend()
+    axes[1].plot(wavelengths[2:74], continum_removed[2:74], label='Data / Continuum')
     axes[1].legend()
 
     return plt.show()

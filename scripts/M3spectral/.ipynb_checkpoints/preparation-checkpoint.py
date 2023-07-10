@@ -30,7 +30,7 @@ def crop_cube (initial_cube,crx1,crx2,cry1,cry2):
     ax[1].set_title('Cropped cube')
     return M3_cubecrop
 
-
+##CONVEX HULL METHOD
 #This function makes the convex hull
 def convexhull_removal(fourier_cube, wavelengths_full,mid_point):
     
@@ -46,29 +46,33 @@ def convexhull_removal(fourier_cube, wavelengths_full,mid_point):
             imput_fourier=fourier_cube.data[0:74,a,b]
             imput_midpoint=mid_point.data[a,b]
             
-            add_point=np.where(wavelengths==imput_midpoint)[0]  #Adding the midpoint
-            add_array2=np.vstack((wavelengths[add_point],  imput_fourier[add_point])).T
-    
-            points = np.c_[wavelengths, imput_fourier]  #Doing the convexhull
-            wavelengths, imput_fourier = points.T
-            augmented = np.concatenate([points, [(wavelengths[0], np.min(imput_fourier)-1), (wavelengths[-1], np.min(imput_fourier)-1)]], axis=0)
-            hull = sp.spatial.ConvexHull(augmented)
-            pre_continuum_points2 = points[np.sort([v for v in hull.vertices if v < len(points)])]
-            pre_continuum_points2 = np.concatenate((pre_continuum_points2,add_array2), axis=0)
-            pre_continuum_points2.sort(axis=0)
-            continuum_points2=np.unique(pre_continuum_points2,axis=0)
-            continuum_function2 = sp.interpolate.interp1d(*continuum_points2.T)
-            fourier_cube_prime = imput_fourier / continuum_function2(wavelengths)
-            fourier_cube_prime[fourier_cube_prime >= 1]= 1
+            if imput_fourier[39] == 0: 
+                stack_hull.append(np.zeros(74))
+            else:
             
-            stack_hull.append(fourier_cube_prime)
+                add_point=np.where(wavelengths==imput_midpoint)[0]  #Adding the midpoint
+                add_array2=np.vstack((wavelengths[add_point],  imput_fourier[add_point])).T
+    
+                points = np.c_[wavelengths, imput_fourier]  #Doing the convexhull
+                wavelengths, imput_fourier = points.T
+                augmented = np.concatenate([points, [(wavelengths[0], np.min(imput_fourier)-1), (wavelengths[-1], np.min(imput_fourier)-1)]], axis=0)
+                hull = sp.spatial.ConvexHull(augmented)
+                pre_continuum_points2 = points[np.sort([v for v in hull.vertices if v < len(points)])]
+                pre_continuum_points2 = np.concatenate((pre_continuum_points2,add_array2), axis=0)
+                pre_continuum_points2.sort(axis=0)
+                continuum_points2=np.unique(pre_continuum_points2,axis=0)
+                continuum_function2 = sp.interpolate.interp1d(*continuum_points2.T)
+                fourier_cube_prime = imput_fourier / continuum_function2(wavelengths)
+                fourier_cube_prime[fourier_cube_prime >= 1]= 1
+                fourier_cube_prime=np.nan_to_num(fourier_cube_prime)
+            
+                stack_hull.append(fourier_cube_prime)
             
     stack_hulla=np.array(stack_hull)
-    hull_cube.data=stack_hulla.reshape(y_hull,z_hull,x_hull).transpose(2,0,1)
+    stack_hullb=stack_hulla.astype(np.float32)
+    hull_cube.data=stack_hullb.reshape(y_hull,z_hull,x_hull).transpose(2,0,1)
     
     return hull_cube
-
-##CONVEX HULL METHOD
 
 # Making rasters with the wavelength of minimum reflectance in 1000 um and 2000 um respectively 
 def find_minimums_ch (hull_cube,midpoint,wavelengths2):
@@ -85,38 +89,46 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths2):
         for b in range(hull_cube.data.shape[2]):
         
             imput_hull=hull_cube.data[:,a,b]
-            imput_midpoint=midpoint.data[a,b]
-            pre_midpointp=np.where(wavelengths==imput_midpoint)[0]
-            midpointp=int(pre_midpointp)
             
-            minimum_1000=np.argmin(imput_hull[0:midpointp])  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
-            ofset=5
-            fitxp=minimum_1000-ofset  #This creates a window around the minimum in the convex hull to do a posteriro fit
-            fitxp=max(0,fitxp)  #If the value is minor to 0, it converts it to 0
-            fitxp2=np.array(minimum_1000+ofset) 
-            fitxp2[fitxp2 > midpointp]= midpointp-1  #The -1 is to avoid that the resulting array is at the midpoint
-            fitx=wavelengths[int(fitxp):int(fitxp2)]
-            fity=imput_hull[int(fitxp):int(fitxp2)]
-            fit_1000=np.polyfit(fitx,fity,2)  #Creates a second order fit aroud the minimum
-            polyval_1000=np.polyval(fit_1000,wavelengths[int(fitxp):int(fitxp2)])
-            min1000p=np.where(polyval_1000== min(polyval_1000))[0]  #Finds the minimum in the fit, this reduce the noise of the final data
-            final_1000=wavelengths[min1000p+fitxp]
-            stack_min1000.append(final_1000[0])
+            if imput_hull[39] == 0:
+                
+                stack_min1000.append(0)
+                stack_min2000.append(0)
+                
+            else:
+                imput_midpoint=midpoint.data[a,b]
+                pre_midpointp=np.where(wavelengths==imput_midpoint)[0]
+                midpointp=int(pre_midpointp)
+                minimum_1000=np.argmin(imput_hull[0:midpointp])  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
+                ofset=5
+                fitxp=minimum_1000-ofset  #This creates a window around the minimum in the convex hull to do a posteriro fit
+                fitxp=max(0,fitxp)  #If the value is minor to 0, it converts it to 0
+                fitxp2=np.array(minimum_1000+ofset) 
+                fitxp2[fitxp2 > midpointp]= midpointp-1  #The -1 is to avoid that the resulting array is at the midpoint
+                fitx=wavelengths[int(fitxp):int(fitxp2)]
+                fity=imput_hull[int(fitxp):int(fitxp2)]
+                fit_1000=np.polyfit(fitx,fity,2)  #Creates a second order fit aroud the minimum
+                polyval_1000=np.polyval(fit_1000,wavelengths[int(fitxp):int(fitxp2)])
+                min1000p=np.where(polyval_1000== min(polyval_1000))[0]  #Finds the minimum in the fit, this reduce the noise of the final data
+                final_1000=wavelengths[min1000p+fitxp]
+                stack_min1000.append(final_1000[0])
             
-            minimum_2000=np.argmin(imput_hull[midpointp:74])+midpointp  #This one does not need specific defintion of indexes vecause there is no risk of ocerlap with the midpoint
-            fit_2000=np.polyfit(wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset)],imput_hull[int(minimum_2000-ofset):int(minimum_2000+ofset)],2)
-            polyval_2000=np.polyval(fit_2000,wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset+1)])
-            min2000p=np.where(polyval_2000== min(polyval_2000))[0]
-            final_2000=wavelengths[min2000p+minimum_2000-ofset]
-            stack_min2000.append(final_2000[0])
+                minimum_2000=np.argmin(imput_hull[midpointp:74])+midpointp  #This one does not need specific defintion of indexes vecause there is no risk of ocerlap with the midpoint
+                fit_2000=np.polyfit(wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset)],imput_hull[int(minimum_2000-ofset):int(minimum_2000+ofset)],2)
+                polyval_2000=np.polyval(fit_2000,wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset+1)])
+                min2000p=np.where(polyval_2000== min(polyval_2000))[0]
+                final_2000=wavelengths[min2000p+minimum_2000-ofset]
+                stack_min2000.append(final_2000[0])
     
     
     stack_min1000a=np.array(stack_min1000)
     stack_min1000a[stack_min1000a ==  wavelengths[0]]= wavelengths[18]
-    min1000.data=stack_min1000a.reshape(ymin1000,zmin1000)
+    stack_min1000b=stack_min1000a.astype(np.float32)
+    min1000.data=stack_min1000b.reshape(ymin1000,zmin1000)
 
     stack_min2000a=np.array(stack_min2000)
-    min2000.data=stack_min2000a.reshape(ymin2000,zmin2000)
+    stack_min2000b=stack_min2000a.astype(np.float32)
+    min2000.data=stack_min2000b.reshape(ymin2000,zmin2000)
     
     return (min1000,min2000)
 
@@ -138,63 +150,75 @@ def find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):
         for b in range(hull_cube2.data.shape[2]):
 
             imput_hull_shoulder=hull_cube2.data[:,a,b]
-            imput_midpoint_shoulder=midpoint.data[a,b]
-            pre_midpointp=np.where(wavelengths==imput_midpoint_shoulder)[0]
-            midpoint_shoulderp=int(pre_midpointp)
-            imput_min1000=min_1000.data[a,b]
-            pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
-            min1000p=int(pre_imput_min1000p)
-            imput_min2000=min_2000.data[a,b]
-            pre_imput_min2000p=np.where(wavelengths==imput_min2000)[0]
-            min2000p=int(pre_imput_min2000p)
             
-
-            shoulder_0=np.where(imput_hull_shoulder[0:min1000p] == max(imput_hull_shoulder[0:min1000p]))[0][-1]  # Works similar to the maximums, but the last argument ensures than only the last value is returned
-            ofset=3
-            fitxp0=shoulder_0-ofset  #This creates a window around the maximum in the convex hull to do a posterior fit
-            fitxp0=max(0, fitxp0) #If the value is minor to 0, it converts it to 0
-            fitx0=wavelengths[int(fitxp0):int(shoulder_0+ofset)]
-            fity0=imput_hull_shoulder[int(fitxp0):int(shoulder_0+ofset)]
-            fit_0=np.polyfit(fitx0,fity0,2)  #Creates a second order fit aroud the maxima
-            polyval_0=np.polyval(fit_0,wavelengths[int(fitxp0):int(shoulder_0+ofset+1)])
-            max0p=np.where(polyval_0== max(polyval_0))[0]  #FInds the minimum in the fit, this reduce the noise of the final data
-            final_0=wavelengths[max0p+fitxp0]
-            stack_shoulder0.append(final_0)
-
-            shoulder_1=np.where(imput_hull_shoulder[min1000p:midpoint_shoulderp] == max(imput_hull_shoulder[min1000p:midpoint_shoulderp]))[0][-1]+min1000p
-            fitxp1=shoulder_1-ofset
-            fitxp1=max(0,fitxp1)
-            fit_1=np.polyfit(wavelengths[int(fitxp1):int(shoulder_1+ofset)],imput_hull_shoulder[int(fitxp1):int(shoulder_1+ofset)],2)
-            polyval_1=np.polyval(fit_1,wavelengths[int(fitxp1):int(shoulder_1+ofset+1)])
-            max1p=np.where(polyval_1== max(polyval_1))[0]
-            final_1=wavelengths[max1p+fitxp1]
-            stack_shoulder1.append(final_1[0])
-
-            if midpoint_shoulderp-min2000p < 0:  #To avoid errors where the aborsoption feature is weak, if the value is too low it assing the midpoint
+            if imput_hull_shoulder[39] == 0:
                 
-                shoulder_2=np.where(imput_hull_shoulder[midpoint_shoulderp:min2000p] == max(imput_hull_shoulder[midpoint_shoulderp:min2000p]))[0][-1]+midpoint_shoulderp
-                value_2=wavelengths[shoulder_2]
-                stack_shoulder2.append(value_2)
-                
+                stack_shoulder0.append(0)
+                stack_shoulder1.append(0)
+                stack_shoulder2.append(0)
+                stack_shoulder3.append(0)
             else:
-                
-                stack_shoulder2.append(wavelengths[midpoint_shoulderp])
+                imput_midpoint_shoulder=midpoint.data[a,b]
+                pre_midpointp=np.where(wavelengths==imput_midpoint_shoulder)[0]
+                midpoint_shoulderp=int(pre_midpointp)
+                imput_min1000=min_1000.data[a,b]
+                pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
+                min1000p=int(pre_imput_min1000p)
+                imput_min2000=min_2000.data[a,b]
+                pre_imput_min2000p=np.where(wavelengths==imput_min2000)[0]
+                min2000p=int(pre_imput_min2000p)
+            
+                shoulder_0=np.where(imput_hull_shoulder[0:min1000p] == max(imput_hull_shoulder[0:min1000p]))[0][-1]  # Works similar to the maximums, but the last argument ensures than only the last value is returned
+                ofset=3
+                fitxp0=shoulder_0-ofset  #This creates a window around the maximum in the convex hull to do a posterior fit
+                fitxp0=max(0, fitxp0) #If the value is minor to 0, it converts it to 0
+                fitx0=wavelengths[int(fitxp0):int(shoulder_0+ofset)]
+                fity0=imput_hull_shoulder[int(fitxp0):int(shoulder_0+ofset)]
+                fit_0=np.polyfit(fitx0,fity0,2)  #Creates a second order fit aroud the maxima
+                polyval_0=np.polyval(fit_0,wavelengths[int(fitxp0):int(shoulder_0+ofset+1)])
+                max0p=np.where(polyval_0== max(polyval_0))[0]  #FInds the minimum in the fit, this reduce the noise of the final data
+                final_0=wavelengths[max0p+fitxp0]
+                stack_shoulder0.append(final_0[0])
 
-            shoulder_3=np.where(imput_hull_shoulder[min2000p:74] == max(imput_hull_shoulder[min2000p:74]))[0][-1]+min2000p
-            value_3=wavelengths[shoulder_3]
-            stack_shoulder3.append(value_3)
+                shoulder_1=np.where(imput_hull_shoulder[min1000p:midpoint_shoulderp] == max(imput_hull_shoulder[min1000p:midpoint_shoulderp]))[0][-1]+min1000p
+                fitxp1=shoulder_1-ofset
+                fitxp1=max(0,fitxp1)
+                fit_1=np.polyfit(wavelengths[int(fitxp1):int(shoulder_1+ofset)],imput_hull_shoulder[int(fitxp1):int(shoulder_1+ofset)],2)
+                polyval_1=np.polyval(fit_1,wavelengths[int(fitxp1):int(shoulder_1+ofset+1)])
+                max1p=np.where(polyval_1== max(polyval_1))[0]
+                final_1=wavelengths[max1p+fitxp1]
+                stack_shoulder1.append(final_1[0])
+
+                if midpoint_shoulderp-min2000p < 0:  #To avoid errors where the aborsoption feature is weak, if the value is too low it assing the midpoint
+                
+                    shoulder_2=np.where(imput_hull_shoulder[midpoint_shoulderp:min2000p] == max(imput_hull_shoulder[midpoint_shoulderp:min2000p]))[0][-1]+midpoint_shoulderp
+                    value_2=wavelengths[shoulder_2]
+                    stack_shoulder2.append(value_2)
+                
+                else:
+                
+                    stack_shoulder2.append(wavelengths[midpoint_shoulderp])
+
+                shoulder_3=np.where(imput_hull_shoulder[min2000p:74] == max(imput_hull_shoulder[min2000p:74]))[0][-1]+min2000p
+                value_3=wavelengths[shoulder_3]
+                stack_shoulder3.append(value_3)
 
     stack_shoulder0a=np.array(stack_shoulder0)
-    shoulder0.data=stack_shoulder0a.reshape(y5,z5)
+    stack_shoulder0b=stack_shoulder0a.astype(np.float32)
+    shoulder0.data=stack_shoulder0b.reshape(y5,z5)
 
     stack_shoulder1a=np.array( stack_shoulder1)
-    shoulder1.data=stack_shoulder1a.reshape(y5,z5)
+    stack_shoulder1b=stack_shoulder1a.astype(np.float32)
+    shoulder1.data=stack_shoulder1b.reshape(y5,z5)
 
     stack_shoulder2a=np.array(stack_shoulder2)
-    shoulder2.data=stack_shoulder2a.reshape(y5,z5)
+    stack_shoulder2b=stack_shoulder2a.astype(np.float32)
+    shoulder2.data=stack_shoulder2b.reshape(y5,z5)
 
     stack_shoulder3a=np.array(stack_shoulder3)
-    shoulder3.data=stack_shoulder3a.reshape(y5,z5)
+    stack_shoulder3b=stack_shoulder3a.astype(np.float32)
+    shoulder3.data=stack_shoulder3b.reshape(y5,z5)
+    
     return (shoulder0, shoulder1, shoulder2, shoulder3)
 
 #Function to find the midpoint to add to the convexhull
@@ -205,26 +229,31 @@ def midpoint(fourier_cube,wavelengths,peak_distance,peak_prominence):
     
     for a in range(fourier_cube.data.shape[1]):
         for b in range(fourier_cube.data.shape[2]):
-        
+            
             cube_fourier=fourier_cube[20:60,a,b]
-            midpoint_y=np.array(cube_fourier[0])
-            midpoint_y2=np.append(midpoint_y,cube_fourier[39])
-            midpoint_x=np.array(wavelengths[20])
-            midpoint_x2=np.append(midpoint_x,wavelengths[59])
-            midpoint_fit=np.polyfit(midpoint_x2,midpoint_y2,1)
-            midpoint_polival=np.polyval(midpoint_fit,wavelengths[20:60])  #Creating a linear fit in the desired range
-        
-            dif_cube=cube_fourier-midpoint_polival  #Diferrence beetwen the data and the linear fit
-            peaks, _ =sp.signal.find_peaks(dif_cube,distance=peak_distance, prominence=peak_prominence)  #We use peak detection in the resulting curve to chose the value
-        
-            if len(peaks) == 0:
-                midpoint_stack.append(wavelengths[42])  #If no peak is detected we select the arbitrary position of 1469.07 nm, obtained from literature (few percentage of pixels need this)
+            if cube_fourier[39] == 0: 
+                midpoint_stack.append(0)
             else:
-                midpoint_stack.append(wavelengths[peaks+20][-1])
+                midpoint_y=np.array(cube_fourier[0])
+                midpoint_y2=np.append(midpoint_y,cube_fourier[39])
+                midpoint_x=np.array(wavelengths[20])
+                midpoint_x2=np.append(midpoint_x,wavelengths[59])
+                midpoint_fit=np.polyfit(midpoint_x2,midpoint_y2,1)
+                midpoint_polival=np.polyval(midpoint_fit,wavelengths[20:60])  #Creating a linear fit in the desired range
+        
+                dif_cube=cube_fourier-midpoint_polival  #Diferrence beetwen the data and the linear fit
+                peaks, _ =sp.signal.find_peaks(dif_cube,distance=peak_distance, prominence=peak_prominence)  #We use peak detection in the resulting curve to chose the value
+        
+                if len(peaks) == 0:
+                    midpoint_stack.append(wavelengths[42])  #If no peak is detected we select the arbitrary position of 1469.07 nm, obtained from literature (few percentage of pixels need this)
+                else:
+                    midpoint_stack.append(wavelengths[peaks+20][-1])
 
     midpoint_stacka=np.array(midpoint_stack)
-    midpoint_cube.data=midpoint_stacka.reshape(y_midpoint,z_midpoint)
+    midpoint_stackb=midpoint_stacka.astype(np.float32)
+    midpoint_cube.data=midpoint_stackb.reshape(y_midpoint,z_midpoint)
     return (midpoint_cube)
+
 
 #LINEAR FIT METHOD
 
