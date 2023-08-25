@@ -9,12 +9,14 @@ from sklearn.preprocessing import MinMaxScaler
 def cube_plot(cube_plot,size,title):
 
     cube_plot1=cube_plot[:,:,:].copy()
+    cube_plot2=cube_plot[:,:,:].copy()
+    cube_plot2.data=np.nan_to_num(cube_plot.data)
     x2,y2,z2=cube_plot[:,:,:].shape
     scaled=[]
     scaler=MinMaxScaler(feature_range=(0, 255))
     for band in range(cube_plot.data.shape[0]):
     
-        scaledRGB=scaler.fit_transform(cube_plot.data[band,:,:])
+        scaledRGB=scaler.fit_transform(cube_plot2.data[band,:,:])
         scaled.append(scaledRGB)
             
     scaleda=np.array(scaled)
@@ -201,7 +203,7 @@ def convexhull_plot(fourier_cube, wavelengths_full,mid_point,y_hull,x_hull):
 
 
 #Linear fit method
-def linerfit_plot(gauss_cube, removed_cube, wavelengths,y_plot,x_plot):    
+def linearfit_plot(gauss_cube, removed_cube, wavelengths,y_plot,x_plot):    
     
     lf_cube=gauss_cube.data[0:74,x_plot,y_plot]  #Second order fit for 1000 nm, it used a range for the two shoudlers around the 1000 nm absorption
     fitx10001=wavelengths[1:7]

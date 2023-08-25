@@ -6,50 +6,68 @@ import xarray as xa
 #Calcualtes all the indexes for the convex hull method
 def indexes_total_CH(gauss_cube,midpoint_cube,hull_cube,wavelengths):
     
-    indexes_total=gauss_cube[0:19,:,:].copy()
+    indexes_total=gauss_cube[0:28,:,:].copy()
         
     #Creating the minimums for the convex hull method
     M3_min1000ch, M3_min2000ch=M3spectral.preparation.find_minimums_ch(hull_cube,midpoint_cube,wavelengths)
     #Obtaining the shoulders for the convex hull method
-    M3_shoulder0ch, M3_shoul1ch, M3_shoulder2ch, M3_shoulder3ch=M3spectral.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
+    M3_shoulder0ch, M3_shoulder1ch, M3_shoulder2ch, M3_shoulder3ch=M3spectral.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
 
     #General indexes
     #R540, reflectance at 540 nm (Zambon et al., 2020)
     M3_R540=R540(gauss_cube) 
+    #R1580, reflectance at 540 nm (Besse et al., 2011)
+    M3_R1580=R1580(gauss_cube) 
     #Spinel detection index (Moriarty III et al. 2022)
     M3_sp=spinel(gauss_cube)  
     #Olivine detection index  (Corley et al., 2018)
-    M3_ol=olivine(gauss_cube)  
+    M3_ol=olivine(gauss_cube) 
+    #Chromtie detection index This work
+    M3_cr=chromite(gauss_cube)
+    #Iron detection index (Wu et al., 2012)
+    M3_fe=iron(gauss_cube)
+    #TiO detection index (Wu et al., 2012)
+    M3_ti=titanium(gauss_cube)
     #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
     M3_clem=clementine(gauss_cube)
     #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
     M3_spanpx=RGB_spanpx(gauss_cube)
 
     #Convex hull indexes
+    #BCI, band center ar 1000 nm
+    M3_BCI_CH=band_center(M3_min1000ch)
+    #BCII, band center ar 2000 nm
+    M3_BCII_CH=band_center(M3_min2000ch)
     #BDI, band depth at 1000 nm with the convex hull method
-    M3_BDI_CH=BDI(hull_cube,M3_min1000ch,wavelengths)
+    M3_BDI_CH=band_depth(hull_cube,M3_min1000ch,wavelengths)
     #BDII, band depth at 2000 nm with the convex hull method
-    M3_BDII_CH=BDII(hull_cube,M3_min2000ch,wavelengths)
+    M3_BDII_CH=band_depth(hull_cube,M3_min2000ch,wavelengths)
     #SS1000, Spectral slope between maximun right shoulder and 540nm
     M3_SSI_CH=SSI(gauss_cube,M3_shoulder1ch,wavelengths) 
     #NIR. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
     M3_NIR_CH=NIR(gauss_cube,hull_cube)
-    #BAI1000
-    M3_BAI1000_CH=BA1000(hull_cube,wavelengths,M3_shoulder0ch,M3_shoulder1ch)
+    #BA1000
+    M3_BAI1000_CH=BA(hull_cube,wavelengths,M3_shoulder0ch,M3_shoulder1ch)
     #ASY1000
-    M3_ASY1000_CH=ASY1000(hull_cube,wavelengths,M3_shoulder0ch, M3_shoulder1ch,M3_min1000ch)
+    M3_ASY1000_CH=ASY(hull_cube,wavelengths,M3_shoulder0ch, M3_shoulder1ch,M3_min1000ch)
+    #BA2000
+    M3_BAI2000_CH=BA(hull_cube,wavelengths,M3_shoulder2ch,M3_shoulder3ch)
+    #ASY2000
+    M3_ASY2000_CH=ASY(hull_cube,wavelengths,M3_shoulder2ch, M3_shoulder3ch,M3_min2000ch)
+    #RGB6
+    M3_RGB6_CH=RGB6(hull_cube)
     
     #Creatinh the output cube
-    indexes_total.data=np.dstack((M3_R540,M3_sp,M3_ol,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_min1000ch,M3_min2000ch,M3_BDI_CH,M3_BDII_CH,M3_SSI_CH,
-                             M3_NIR_CH[0],M3_NIR_CH[1],M3_NIR_CH[2],M3_BAI1000_CH,M3_ASY1000_CH)).transpose(2,0,1)
+    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_CH,M3_BCII_CH,M3_BDI_CH,M3_BDII_CH,M3_SSI_CH,
+                             M3_NIR_CH[0],M3_NIR_CH[1],M3_NIR_CH[2],M3_BAI1000_CH,M3_ASY1000_CH,M3_BAI2000_CH,M3_ASY2000_CH,M3_RGB6_CH[0],M3_RGB6_CH[1],M3_RGB6_CH[2])).transpose(2,0,1)
     
     #Giv name to the bands
-    bands = ['Reflectance 540 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter',
-             'Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1000 nm CH','Band center 2000 nm CH','Band depth 1000 nm CH','Band depth 2000 nm CH',
-             'Spectral slope 1000 nm CH','Band depth 1900 CH','Integrated band depth 2000 nm CH', 'Integrated band depth 1000 nm CH','Band area 1000 nm CH','Band assymetry 1000 nm CH']
+    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter',
+             'Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm CH','Band center 2 µm CH','Band depth 1 µm CH','Band depth 2 µm CH',
+             'Spectral slope 1 µm CH','Band depth 1.9 µm CH','Integrated band depth 2 µm CH', 'Integrated band depth 1 µm CH','Band area 1 µm CH','Band assymetry 1 µm CH','Band area 2 µm CH','Band assymetry 2 µm CH','Band depth at 950 nm CH', 'Band depth at 1.05 µm CH','Band depth at 1.25 µm CH' ]
     indexes_final_ch=xa.Dataset()
 
-    for e in range(19):
+    for e in range(28):
         indexes_final_ch[bands[e]] = indexes_total[e,:,:]
         
     return(indexes_final_ch)
@@ -58,15 +76,23 @@ def indexes_total_CH(gauss_cube,midpoint_cube,hull_cube,wavelengths):
 #All the indexes for the lienar fit method
 def indexes_total_LF(gauss_cube,lf_cube,wavelengths):
     
-    indexes_total=gauss_cube[0:19,:,:].copy()
+    indexes_total=gauss_cube[0:28,:,:].copy()
         
     #General indexes
     #R540, reflectance at 540 nm (Zambon et al., 2020)
     M3_R540=R540(gauss_cube) 
+    #R1580, reflectance at 540 nm (Besse et al., 2011)
+    M3_R1580=R1580(gauss_cube) 
     #Spinel detection index (Moriarty III et al. 2022)
     M3_sp=spinel(gauss_cube)  
     #Olivine detection index  (Corley et al., 2018)
     M3_ol=olivine(gauss_cube)  
+    #Chromtie detection index This work
+    M3_cr=chromite(gauss_cube)
+    #Iron detection index (Wu et al., 2012)
+    M3_fe=iron(gauss_cube)
+    #TiO detection index (Wu et al., 2012)
+    M3_ti=titanium(gauss_cube)
     #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
     M3_clem=clementine(gauss_cube)
     #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
@@ -77,29 +103,39 @@ def indexes_total_LF(gauss_cube,lf_cube,wavelengths):
     M3_shoulder0lf,M3_shoulder1lf,M3_shoulder2lf=M3spectral.preparation.find_shoulders_lf(lf_cube,M3_min1000lf,M3_min2000lf,wavelengths)
     
     #Linear fit indexes
+    #BCI, band center ar 1000 nm
+    M3_BCI_LF=band_center(M3_min1000lf)
+    #BCII, band center ar 2000 nm
+    M3_BCII_LF=band_center(M3_min2000lf)
     #BDI, band depth at 1000 nm with the convex hull method
-    M3_BDI_LF=BDI(lf_cube,M3_min1000lf,wavelengths)
+    M3_BDI_LF=band_depth(lf_cube,M3_min1000lf,wavelengths)
     #BDII, band depth at 2000 nm with the convex hull method
-    M3_BDII_LF=BDII(lf_cube,M3_min2000lf,wavelengths)
+    M3_BDII_LF=band_depth(lf_cube,M3_min2000lf,wavelengths)
     #SS1000, Spectral slope between maximun right shoulder and 540nm
     M3_SSI_LF=SSI(gauss_cube,M3_shoulder1lf,wavelengths) 
     #NIR. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
     M3_NIR_LF=NIR(gauss_cube,lf_cube)
     #BAI1000
-    M3_BAI1000_LF=BA1000(lf_cube,wavelengths,M3_shoulder0lf,M3_shoulder1lf)
+    M3_BAI1000_LF=BA(lf_cube,wavelengths,M3_shoulder0lf,M3_shoulder1lf)
     #ASY1000
-    M3_ASY1000_LF=ASY1000(lf_cube,wavelengths,M3_shoulder0lf, M3_shoulder1lf,M3_min1000lf)
+    M3_ASY1000_LF=ASY(lf_cube,wavelengths,M3_shoulder0lf, M3_shoulder1lf,M3_min1000lf)
+    #BAI2000
+    M3_BAI2000_LF=BA(lf_cube,wavelengths,M3_shoulder1lf,M3_shoulder2lf)
+    #ASY2000
+    M3_ASY2000_LF=ASY(lf_cube,wavelengths,M3_shoulder1lf, M3_shoulder2lf,M3_min2000lf)
+    #RGB6
+    M3_RGB6_LF=RGB6(lf_cube)
     
     #Creatinh the output cube
     
-    indexes_total.data=np.dstack((M3_R540,M3_sp,M3_ol,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_min1000lf,M3_min2000lf,
-                                  M3_BDI_LF,M3_BDI_LF,M3_SSI_LF,M3_NIR_LF[0],M3_NIR_LF[1],M3_NIR_LF[2],M3_BAI1000_LF,M3_ASY1000_LF)).transpose(2,0,1)
+    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_LF,M3_BCII_LF,
+                                  M3_BDI_LF,M3_BDII_LF,M3_SSI_LF,M3_NIR_LF[0],M3_NIR_LF[1],M3_NIR_LF[2],M3_BAI1000_LF,M3_ASY1000_LF,M3_BAI2000_LF,M3_ASY2000_LF,M3_RGB6_LF[0],M3_RGB6_LF[1],M3_RGB6_LF[2])).transpose(2,0,1)
     
     #Give name to the bands
-    bands = ['Reflectance 540 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1000 nm LF','Band center 2000 nm LF','Band depth 1000 nm LF','Band depth 2000 nm LF','Spectral slope 1000 nm LF','Band depth 1900 LF','Integrated band depth 2000 nm LF', 'Integrated band depth 1000 nm LF','Band area 1000 nm LF','Band assymetry 1000 nm LF']
+    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter', 'Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm LF','Band center 2 µm LF','Band depth 1 µm LF','Band depth 2 µm LF','Spectral slope 1 µm LF','Band depth 1.9 µm LF','Integrated band depth 2 µm LF', 'Integrated band depth 1 µm LF','Band area 1 µm LF','Band assymetry 1 µm LF','Band area 2 µm LF','Band assymetry 2 µm LF','Band depth at 950 nm LF', 'Band depth at 1.05 µm LF','Band depth at 1.25 µm LF']
     indexes_final_lf=xa.Dataset()
 
-    for e in range(19):
+    for e in range(28):
         indexes_final_lf[bands[e]] = indexes_total[e,:,:]
 
     return(indexes_final_lf)
@@ -112,52 +148,11 @@ def R540 (fourier_cube):
     return cube_R540
 
 
-#BDI, band depth at 1000 nm with the convex hull method
-def BDI (hull_cube,min1000,wavelengths3):
-    cube_CHBDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_CHBDI=[]
-    y,z=hull_cube[0,:,:].shape
-    wavelengths=wavelengths3[0:74]
-    
-    for a in range(hull_cube.data.shape[1]):
-        for b in range(hull_cube.data.shape[2]):
-            
-            imput_CH=hull_cube.data[:,a,b]
-            imput_min1000=min1000.data[a,b]
-            pre_imput_min1000p=np.where(wavelengths==imput_min1000)[0]
-            min1000p=int(pre_imput_min1000p)
-            
-            CHBDI_1000=1 - imput_CH[min1000p]  #Finding the value of the band depth
-    
-            stack_CHBDI.append(CHBDI_1000)
-            
-    stack_CHBDIa=np.array(stack_CHBDI)
-    cube_CHBDI.data=stack_CHBDIa.reshape(y,z)
-    return cube_CHBDI
-
-
-#BDII, band depth at 2000 nm with the convex hull method
-def BDII (hull_cube, min2000,wavelengths3):
-    cube_CHBDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_CHBDII=[]
-    y,z=hull_cube[0,:,:].shape
-    wavelengths=wavelengths3[0:74]
-    
-    for a in range(hull_cube.data.shape[1]):
-        for b in range(hull_cube.data.shape[2]):
-            
-            imput_CH=hull_cube.data[:,a,b]
-            imput_min2000=min2000.data[a,b]
-            pre_imput_min2000p=np.where(wavelengths==imput_min2000)[0]
-            min2000p=int(pre_imput_min2000p)
-        
-            CHBDI_2000=1 - imput_CH[min2000p]  #Finding the value of the band depth
-    
-            stack_CHBDII.append(CHBDI_2000)
-            
-    stack_CHBDIIa=np.array(stack_CHBDII)
-    cube_CHBDII.data=stack_CHBDIIa.reshape(y,z)
-    return cube_CHBDII
+#R1580, reflectance at 540 nm
+def R1580 (fourier_cube):
+    cube_R1580=fourier_cube[47,:,:]  #The first band corresponds to that wavelength
+    cube_R1580.data[cube_R1580.data==0]=np.nan
+    return cube_R1580
 
 
 #Olivine detection index
@@ -172,26 +167,25 @@ def spinel (gauss_cube):
     return sp1
 
 
-#SS1000, Spectral slope between maximun right shoulder and 540nm
-def SSI (fourier_cube,shoulder1, wavelengths):
-    SSI=fourier_cube[0,:,:].copy()
-    stack_SSI=[]
-    y,z=fourier_cube[0,:,:].shape
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
-        
-            imput_SS1200=fourier_cube.data[:,a,b]
-            imput_shoulder1=shoulder1.data[a,b]
-            pre_shoulder1=np.where(wavelengths==imput_shoulder1)[0]
-            shoulder1p=int(pre_shoulder1)
-        
-            SS=((imput_SS1200[shoulder1p])-imput_SS1200[0])/(((wavelengths[shoulder1p])-540.84)*imput_SS1200[0])  #Calculating the slope beetwen the R540 and the shoulder
-            stack_SSI.append(SS)
-        
-    stack_SSIa=np.array(stack_SSI)
-    SSI.data=stack_SSIa.reshape(y,z)
-    return SSI
+#Chromtie detection index
+def chromite (gauss_cube):
+    cr=gauss_cube[0,:,:].copy()
+    cr.data=((((gauss_cube[36,:,:]-gauss_cube[6,:,:])/600)*1500)+gauss_cube[36,:,:])/gauss_cube[77,:,:]
+    return cr
 
+
+#FeO detection index
+def iron (gauss_cube):
+    fe=gauss_cube[0,:,:].copy()
+    fe=np.arctan(((gauss_cube[19,:,:]/gauss_cube[6,:,:])-1.19)/(gauss_cube[6,:,]-0.08))
+    return fe
+
+
+#TiO detction index
+def titanium (gauss_cube):
+    ti=gauss_cube[0,:,:].copy()
+    ti=np.arctan(((gauss_cube[0,:,:]/gauss_cube[6,:,:])-0.71)/(gauss_cube[6,:,]-0.07))
+    return ti
 
 #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
 def clementine (fourier_cube):
@@ -204,15 +198,76 @@ def clementine (fourier_cube):
     return clem
 
 
-#Anorthosite,spinela and pyroxene detection index
+#Anorthosite,spinel and pyroxene detection index
 def RGB_spanpx (gauss_cube):
     spanpx=gauss_cube[0:3,:,:].copy()  
     px=(gauss_cube[4,:,:]+gauss_cube[29,:,:])/gauss_cube[16,:,:]
     sp=gauss_cube[39,:,:]/gauss_cube[51,:,:]
     an=(gauss_cube[19,:,:]+gauss_cube[44,:,:])/gauss_cube[31,:,:]
     spanpx.data=np.dstack((px,sp,an)).transpose(2,0,1)
-    spanpx.data[clem.data > 3]=0
+    spanpx.data[spanpx.data > 3]=0
     return spanpx
+
+#Band centers
+def band_center (minimum):
+    band_center=minimum.copy()
+    band_center.data[band_center.data==0]=np.nan
+    return band_center
+
+
+#Band depth
+def band_depth (hull_cube,minimum,wavelengths3):
+    cube_depth=hull_cube[0,:,:].copy()  #Copying the cube to save the results
+    stack_depth=[]
+    y,z=hull_cube[0,:,:].shape
+    wavelengths=wavelengths3[0:74]
+    
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
+            
+            input_depth=hull_cube.data[:,a,b]
+                    
+            if input_depth[39] == 0:   
+                    stack_depth.append(0)
+            else:
+                input_min=minimum.data[a,b]
+                pre_input_minp=np.where(wavelengths==input_min)[0]
+                minp=int(pre_input_minp)
+            
+                band_depth=1 - input_depth[minp]  #Finding the value of the band depth
+    
+                stack_depth.append(band_depth)
+            
+    stack_deptha=np.array(stack_depth)
+    cube_depth.data=stack_deptha.reshape(y,z)
+    cube_depth.data[cube_depth.data==0]=np.nan
+    return cube_depth
+
+
+#SS1000, Spectral slope between maximun right shoulder and 540nm
+def SSI (gauss_cube,shoulder1, wavelengths):
+    SSI=gauss_cube[0,:,:].copy()
+    stack_SSI=[]
+    y,z=gauss_cube[0,:,:].shape
+    for a in range(gauss_cube.data.shape[1]):
+        for b in range(gauss_cube.data.shape[2]):
+            
+            input_SS1200=gauss_cube.data[:,a,b]
+                    
+            if input_SS1200[39] == 0:   
+                    stack_SSI.append(0)
+            else:
+                input_shoulder1=shoulder1.data[a,b]
+                pre_shoulder1=np.where(wavelengths==input_shoulder1)[0]
+                shoulder1p=int(pre_shoulder1)
+        
+                SS=((input_SS1200[shoulder1p])-input_SS1200[0])/(((wavelengths[shoulder1p])-540.84)*input_SS1200[0])  #Calculating the slope beetwen the R540 and the shoulder
+                stack_SSI.append(SS)
+        
+    stack_SSIa=np.array(stack_SSI)
+    SSI.data=stack_SSIa.reshape(y,z)
+    SSI.data[SSI.data==0]=np.nan
+    return SSI
 
 
 #RGB1. R: SSI, G: BDI, B: BDII
@@ -237,37 +292,58 @@ def RGB3 (gauss_cub,SSI_cube,R540_cube,BCI_cube):
     return RGB3
 
 
+#RGB6. Band depths at 950, 1050 and 1250
+def RGB6 (hull_cube):
+    RGB6=hull_cube[0:3,:,:].copy()
+    RGB6_R=1-hull_cube.data[16,:,:]
+    RGB6_G=1-hull_cube.data[21,:,:]
+    RGB6_B=1-hull_cube.data[31,:,:]
+    RGB6.data=np.dstack((RGB6_R,RGB6_G,RGB6_B)).transpose(2,0,1)
+    RGB6.data[RGB6.data==1]=np.nan
+    return RGB6
+
+
+#RGB6. Reflectance at 1580, IBDI, IBDII
+def RGB7 (gauss_cube,R1580,IBD1000,IBD200):
+    RGB7=gauss_cube[0:3,:,:].copy()
+    RGB7.data=np.dstack((R1580,IBD1000,IBD200)).transpose(2,0,1)
+    return RGB7
+
+
 #BAI1000
-def BA1000 (hull_cube,wavelengths,shoulder0,shoulder1):
-    y,z=fourier_cube[0,:,:].shape
+def BA (hull_cube,wavelengths,shoulder0,shoulder1):
+    y,z=hull_cube[0,:,:].shape
     SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
     SR=np.append(39.92,SR)   #Adding the first value
 
     #Calculating the band area
-    BAI=fourier_cube[0,:,:].copy()
+    BAI=hull_cube[0,:,:].copy()
     stack_BAI=[]
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
             
             s0 = shoulder0.data[a,b]  #The shoulders limits the area calculation
             s1 = shoulder1.data[a,b]
-        
-            start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
-            end = np.where(wavelengths == s1)[0][0].item()
-        
+                    
+            if s0 == 0:   
+                    stack_BAI.append(0)
+            else:
+                start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
+                end = np.where(wavelengths == s1)[0][0].item()
            
-            imput_SR= SR[start:end]
-            imput_CCA= hull_cube.data[:,a,b]
+                input_SR= SR[start:end]
+                input_CCA= hull_cube.data[:,a,b]
             
-            sum3=0
-            for c in range(start, end):
+                sum3=0
+                for c in range(start, end):
                 
-                sum3 += ((1 - imput_CCA[c-start]) * imput_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
+                    sum3 += ((1 - input_CCA[c-start]) * input_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
                 
-            stack_BAI.append(sum3)
+                stack_BAI.append(sum3)
         
     stack_BAIa=np.array(stack_BAI)
     BAI.data=stack_BAIa.reshape(y,z)
+    BAI.data[BAI.data==0]=np.nan
     return BAI
 
 
@@ -285,20 +361,22 @@ def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000
             
             s0 = shoulder0.data[a,b]  #The shoulders limits the area calculation
             s1 = shoulder1.data[a,b]
-        
-            start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
-            end = np.where(wavelengths == s1)[0][0].item()
-        
+                    
+            if s0 == 0:   
+                    stack_BAI.append(0)
+            else:
+                start = np.where(wavelengths == s0)[0][0].item()  #Creating the range
+                end = np.where(wavelengths == s1)[0][0].item()
            
-            imput_SR= SR[start:end]
-            imput_CCA= fourier_cube.data[:,a,b]
+                input_SR= SR[start:end]
+                input_CCA= fourier_cube.data[:,a,b]
             
-            sum3=0
-            for c in range(start, end):
+                sum3=0
+                for c in range(start, end):
                 
-                sum3 += ((1 - imput_CCA[c-start]) * imput_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
+                    sum3 += ((1 - input_CCA[c-start]) * input_SR[c-start])  #Calculates the area by te sum of the spectral resolution multiplied by 1 minus the reflectance
                 
-            stack_BAI.append(sum3)
+                stack_BAI.append(sum3)
         
     stack_BAIa=np.array(stack_BAI)
     BAI.data=stack_BAIa.reshape(y,z)
@@ -306,57 +384,68 @@ def RGB4 (fourier_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000
     #Creating the RGB
     CCA=fourier_cube[0:3,:,:].copy()
     CCA.data=np.dstack((minimum_1000,minimum_2000,BAI)).transpose(2,0,1)
+    CCA.data[CCA.data==0]=np.nan
     return CCA
 
 
 #Asimetry 1000 nm
-def ASY1000 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000):
+def ASY (hull_cube,wavelengths,shoulder0,shoulder1,min1000):
     SR=np.diff(wavelengths)  #Finding the spectral resolution, neccesary to find the area
     SR=np.append(39.92,SR)   #Adding the first value
     
     #Caculating the asymmetry
-    y,z=fourier_cube[0,:,:].shape
-    ASY=fourier_cube[0,:,:].copy()
+    y,z=hull_cube[0,:,:].shape
+    ASY=hull_cube[0,:,:].copy()
 
     stack_ASY1=[]
     stack_ASY2=[]
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
+    stack_ASY3=[]
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
+            
             
             s00 = shoulder0.data[a,b]  #The asimmetry is also calculated inside the shoulders
             s11 = shoulder1.data[a,b]
             input_min1000=min1000.data[a,b]
-
-            start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
-            end1 = np.where(wavelengths == s11)[0][0].item()
-            middle=np.where(wavelengths == input_min1000)[0][0].item()
+            
+            if s00 == 0:   
+                    stack_ASY1.append(0)
+                    stack_ASY2.append(0)
+                    
+            else:
+                start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
+                end1 = np.where(wavelengths == s11)[0][0].item()
+                middle=np.where(wavelengths == input_min1000)[0][0].item()
            
-            imput_SR1= SR[start1:middle]
-            imput_SR2= SR[middle:end1]
-            imput_CCA= fourier_cube.data[:,a,b]
+                imput_SR1= SR[start1:middle]
+                imput_SR2= SR[middle:end1]
+                imput_CCA= hull_cube.data[:,a,b]
             
-            sum4=0
-            for c in range(start1, middle):
+                sum4=0
+                for c in range(start1, middle):
                 
-                sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
+                    sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
                 
-            stack_ASY1.append(sum4)
+                stack_ASY1.append(sum4)
             
-            
-            sum5=0
-            for d in range(middle, end1):
+                sum5=0
                 
-                sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                for d in range(middle, end1):
                 
-            stack_ASY2.append(sum5)         
+                    sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                
+                stack_ASY2.append(sum5)         
             
     #Asimetry calculation
     sum_ASY=np.add(stack_ASY1,stack_ASY2)  #Calcualting the total area
-    stack_ASY3=[]
 
     for a in range(len(stack_ASY2)):
+        
+        if stack_ASY1[a] ==0:
+            
+            stack_ASY3.append(0)
                 
-        if stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
+        elif stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
                     
             stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  #The asymmetry is the difference beetwen the two areas when dividing the peak in half, it is given in as a pecentage of the total area
                     
@@ -366,6 +455,7 @@ def ASY1000 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000):
 
     stack_ASY3a=np.array(stack_ASY3)
     ASY.data=stack_ASY3a.reshape(y,z)
+    ASY.data[ASY.data==0]=np.nan
     return ASY
 
 
@@ -380,43 +470,53 @@ def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
 
     stack_ASY1=[]
     stack_ASY2=[]
+    stack_ASY3=[]
     for a in range(fourier_cube.data.shape[1]):
         for b in range(fourier_cube.data.shape[2]):
+            
             
             s00 = shoulder0.data[a,b]  #The asimmetry is also calculated inside the shoulders
             s11 = shoulder1.data[a,b]
             input_min1000=min1000.data[a,b]
-
-            start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
-            end1 = np.where(wavelengths == s11)[0][0].item()
-            middle=np.where(wavelengths == input_min1000)[0][0].item()
+            
+            if s00 == 0:   
+                    stack_ASY1.append(0)
+                    stack_ASY2.append(0)
+                    
+            else:
+                start1 = np.where(wavelengths == s00)[0][0].item()  #Definnig the range
+                end1 = np.where(wavelengths == s11)[0][0].item()
+                middle=np.where(wavelengths == input_min1000)[0][0].item()
            
-            imput_SR1= SR[start1:middle]
-            imput_SR2= SR[middle:end1]
-            imput_CCA= fourier_cube.data[:,a,b]
+                imput_SR1= SR[start1:middle]
+                imput_SR2= SR[middle:end1]
+                imput_CCA= fourier_cube.data[:,a,b]
             
-            sum4=0
-            for c in range(start1, middle):
+                sum4=0
+                for c in range(start1, middle):
                 
-                sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
+                    sum4 += ((1 - imput_CCA[c-start1]) * imput_SR1[c-start1])  #Calculating the area of the first half of the zone
                 
-            stack_ASY1.append(sum4)
+                stack_ASY1.append(sum4)
             
-            
-            sum5=0
-            for d in range(middle, end1):
+                sum5=0
                 
-                sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                for d in range(middle, end1):
                 
-            stack_ASY2.append(sum5)         
+                    sum5 += ((1 - imput_CCA[d-middle]) * imput_SR2[d-middle])  #Calculating the area of the second half of the zone
+                
+                stack_ASY2.append(sum5)         
             
     #Asimetry calculation
     sum_ASY=np.add(stack_ASY1,stack_ASY2)  #Calcualting the total area
-    stack_ASY3=[]
 
     for a in range(len(stack_ASY2)):
+        
+        if stack_ASY1[a] ==0:
+            
+            stack_ASY3.append(0)
                 
-        if stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
+        elif stack_ASY1[a] > stack_ASY2[a]:  #If the left side area is bigger, the asmmetry is negative
                     
             stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  #The asymmetry is the difference beetwen the two areas when dividing the peak in half, it is given in as a pecentage of the total area
                     
@@ -428,16 +528,65 @@ def RGB5 (fourier_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
     ASY.data=stack_ASY3a.reshape(y,z)
     RGB5=fourier_cube[0:3,:,:].copy()
     RGB5.data=np.dstack((ASY,min1000,min2000)).transpose(2,0,1)
+    RGB5.data[RGB5.data==0]=np.nan
     return RGB5
 
 
+#Integrated band depth at 1000 nm
+def IBDII(hull_cube):
+    y2000,z2000=hull_cube[0,:,:].shape
+    IBDII=hull_cube[0,:,:].copy()
+    IBDII_slice=hull_cube[49:70,:,:]  #Defines the section to iterate around 2000 nm
+    stack_IBDII=[]
+    
+    for a in range(IBDII_slice.data.shape[1]):
+        for b in range(IBDII_slice.data.shape[2]):
+            sum1=0
+            if IBDII_slice[19,a,b]==0: 
+                    stack_IBDII.append(0)
+            else:
+                for c in range(IBDII_slice.data.shape[0]):
+                    input_hull=IBDII_slice.data[:,a,b]
+                    sum1 += (1- input_hull[c])  #Summatory
+                stack_IBDII.append(sum1)
+        
+    stack_IBDIIa=np.array(stack_IBDII)
+    IBDII.data=stack_IBDIIa.reshape(y2000,z2000)
+    IBDII.data[IBDII.data==0]=np.nan
+    return IBDII
+    
+    
+#Integrated band depth at 1000 nm
+def IBDI(hull_cube):
+    y2000,z2000=hull_cube[0,:,:].shape
+    IBDI=hull_cube[0,:,:].copy()
+    IBDI_slice=hull_cube[8:34,:,:]  #Defines the section to iterate around 2000 nm
+    stack_IBDI=[]
+    
+    for a in range(IBDI_slice.data.shape[1]):
+        for b in range(IBDI_slice.data.shape[2]):
+            sum1=0
+            if IBDI_slice[19,a,b]==0: 
+                    stack_IBDI.append(0)
+            else:
+                for c in range(IBDI_slice.data.shape[0]):
+                    input_hull=IBDI_slice.data[:,a,b]
+                    sum1 += (1- input_hull[c])  
+                stack_IBDI.append(sum1)
+        
+    stack_IBDIa=np.array(stack_IBDI)
+    IBDI.data=stack_IBDIa.reshape(y2000,z2000)
+    IBDI.data[IBDI.data==0]=np.nan
+    return IBDI
+
+    
 #NIR Color 1, R: BD 1900, IBD 2000, IBD 1000
 def NIR (fourier_cube,hull_cube):
     y1000,z1000=hull_cube[0,:,:].shape
     y2000,z2000=hull_cube[0,:,:].shape
     #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
     NIR1= 1 - (hull_cube[55,:,:])
-
+    NIR1.data[NIR1.data==1]=np.nan
     
     #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
     NIR2=hull_cube[0,:,:].copy()
@@ -447,13 +596,13 @@ def NIR (fourier_cube,hull_cube):
     for a in range(NIR2_slice.data.shape[1]):
         for b in range(NIR2_slice.data.shape[2]):
             sum1=0
-            for c in range(NIR2_slice.data.shape[0]):
-                
-                imput_hull=NIR2_slice.data[:,a,b]
-            
-                sum1 += (1- imput_hull[c])  #Summatory
-                
-            stack_NIR2.append(sum1)
+            if NIR2_slice[19,a,b]==0: 
+                    stack_NIR2.append(0)
+            else:
+                for c in range(NIR2_slice.data.shape[0]):
+                    input_hull=NIR2_slice.data[:,a,b]
+                    sum1 += (1- input_hull[c])  #Summatory
+                stack_NIR2.append(sum1)
         
     stack_NIR2a=np.array(stack_NIR2)
     NIR2.data=stack_NIR2a.reshape(y2000,z2000)
@@ -466,13 +615,13 @@ def NIR (fourier_cube,hull_cube):
     for a in range(NIR3_slice.data.shape[1]):
         for b in range(NIR3_slice.data.shape[2]):
             sum2=0
-            for c in range(NIR3_slice.data.shape[0]):
-    
-                imput_hull4=NIR3_slice.data[:,a,b]
-            
-                sum2 += (1-imput_hull4[c])
-                
-            stack_NIR3.append(sum2)
+            if NIR3_slice[19,a,b]==0: 
+                    stack_NIR3.append(0)
+            else:
+                for c in range(NIR3_slice.data.shape[0]):
+                    input_hull4=NIR3_slice.data[:,a,b]
+                    sum2 += (1-input_hull4[c])
+                stack_NIR3.append(sum2)
             
     stack_NIR3a=np.array(stack_NIR3)
     NIR3.data=stack_NIR3a.reshape(y1000,z1000)
@@ -480,8 +629,8 @@ def NIR (fourier_cube,hull_cube):
     #Making the composite
     NIR_total=fourier_cube[0:3,:,:].copy()
     NIR_total.data=np.dstack((NIR1,NIR2,NIR3)).transpose(2,0,1)
+    NIR_total.data[NIR_total.data==0]=np.nan
     return NIR_total
-
 
 ##INDEXES WITH THE LIENAR FIT REMOVAL METHOD
 

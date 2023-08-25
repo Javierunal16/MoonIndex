@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import scipy as sp
 
 
-#This function attach the wavelength to the cube
-def attach_wavelen (cube_alone,wave):
+#This function attach the wavelength to the cube, sets the no value data to 0 and deletes the two first malfunctioning bandsdef attach_wavelength
     cube_alone2=cube_alone[2:85,:,:]
     cube_alone2.data[cube_alone2.data < -1000]= 0
     cube_alone2.data[cube_alone2.data > 1000]= 0
@@ -15,20 +14,38 @@ def attach_wavelen (cube_alone,wave):
     return cube_wave
 
 
-#This function attach the wavelength to the cube, sets the no value data to 0 and deletes the two first malfunctioning bands
-def crop_cube (initial_cube,crx1,crx2,cry1,cry2):
+#This function crop the cube using the array indexes
+def crop_cube_size (initial_cube,crx1,crx2,cry1,cry2):
     cx1,cx2=crx1,crx2
     cy1,cy2=cry1,cry2
     M3_cubecrop=initial_cube[:,cy1:cy2,cx1:cx2]
     rect_crop=patches.Rectangle((cx1,cy1),(cx2-cx1),(cy2-cy1),linewidth=1, edgecolor='r', facecolor='none')
 
     plot0, ax=plt.subplots(1,2, figsize=(5,20))
-    ax[0].imshow(initial_cube[5,:,:])
+    ax[0].imshow(initial_cube[0,:,:])
     ax[0].set_title('Full cube')
     ax[0].add_patch(rect_crop)
-    ax[1].imshow(M3_cubecrop[5,:,:])
+    ax[1].imshow(M3_cubecrop[0,:,:])
     ax[1].set_title('Cropped cube')
     return M3_cubecrop
+
+#This function crop the cube using the coordinates
+def crop_cube (initial_cube,minnx,minny,maxxx,maxxy):
+    croped_cube=initial_cube.rio.clip_box(minx=minnx,miny=minny,maxx=maxxx,maxy=maxxy)
+    rect_crop=patches.Rectangle((minnx,minny),(maxxx-minnx),(maxxy-minny),linewidth=1, edgecolor='r', facecolor='none')
+
+    plot0, (axs, axs1)=plt.subplots(1,2, figsize=(5,20))
+
+    initial_cube[0:3,:,:].plot.imshow(ax=axs,robust=True,add_labels=False)
+    axs.add_patch(rect_crop)
+    axs.set_aspect(1)
+    axs.set_title('Full cube')
+
+    croped_cube[0:3,:,:].plot.imshow(ax=axs1,robust=True,add_labels=False)
+    axs1.set_aspect(1)
+    axs1.set_title('Cropped cube')
+    plt.tight_layout() 
+    return croped_cube
 
 ##CONVEX HULL METHOD
 #This function makes the convex hull
@@ -268,24 +285,29 @@ def continuum_removal_lf (gauss_cube,wavelengths2):
         for b in range(gauss_cube.data.shape[2]):
     
             lf_cube=gauss_cube.data[0:74,a,b]  #Second order fit for 1000 nm, it used a range for the two shoudlers around the 1000 nm absorption
-            fitx10001=wavelengths[1:7]
-            fitx10002=wavelengths[39:42]
-            fitx1000=np.hstack((fitx10001,fitx10002))
-            fity10001=lf_cube[1:7]
-            fity10002=lf_cube[39:42]
-            fity1000=np.hstack((fity10001,fity10002))
-            fit1000=np.polyfit(fitx1000,fity1000,2)
-            polival1000=np.polyval(fit1000,wavelengths[0:42])
+            
+            if lf_cube[39] == 0: 
+                stack_lf.append(np.zeros(74))
+            else:
+                
+                fitx10001=wavelengths[1:7]
+                fitx10002=wavelengths[39:42]
+                fitx1000=np.hstack((fitx10001,fitx10002))
+                fity10001=lf_cube[1:7]
+                fity10002=lf_cube[39:42]
+                fity1000=np.hstack((fity10001,fity10002))
+                fit1000=np.polyfit(fitx1000,fity1000,2)
+                polival1000=np.polyval(fit1000,wavelengths[0:42])
 
-            fitx2000=np.hstack((fitx10002,wavelengths[73])) #Fit for 2000 nm, linear
-            fity2000=np.hstack((fity10002,lf_cube[73]))
-            fit2000=np.polyfit(fitx2000,fity2000,1)
-            polival2000=np.polyval(fit2000,wavelengths[42:74])
+                fitx2000=np.hstack((fitx10002,wavelengths[73])) #Fit for 2000 nm, linear
+                fity2000=np.hstack((fity10002,lf_cube[73]))
+                fit2000=np.polyfit(fitx2000,fity2000,1)
+                polival2000=np.polyval(fit2000,wavelengths[42:74])
 
-            continuum=np.hstack((polival1000,polival2000))  #Continuum removal by dividing
-            continuum_removed=lf_cube/continuum
-            continuum_removed[continuum_removed > 1]= 1
-            stack_lf.append(continuum_removed)
+                continuum=np.hstack((polival1000,polival2000))  #Continuum removal by dividing
+                continuum_removed=lf_cube/continuum
+                continuum_removed[continuum_removed > 1]= 1
+                stack_lf.append(continuum_removed)
             
     stack_lfa=np.array(stack_lf)
     lf.data=stack_lfa.reshape(y,z,x).transpose(2,0,1)
@@ -305,29 +327,36 @@ def find_minimuumslf (lf_cube,wavelengths):
         
             min_lf=lf_cube.data[:,a,b]
             
-            minimum_1000lf=np.argmin(min_lf[7:39])+7  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
-            ofsetlf=5
-            fitxplf=minimum_1000lf-ofsetlf  #This creates a window around the minimum in the convex hull to do a posteriro fit
-            fitxp2lf=np.array(minimum_1000lf+ofsetlf)
-            fitxp2lf[fitxp2lf > 39]= 38
-            fitxlf=wavelengths[int(fitxplf):int(fitxp2lf)]
-            fitylf=min_lf[int(fitxplf):int(fitxp2lf)]
-            fit_1000lf=np.polyfit(fitxlf,fitylf,2)  #Creates a second order fit aroud the minimum
-            polyval_1000lf=np.polyval(fit_1000lf,wavelengths[int(fitxplf):int(fitxp2lf)])
-            min1000plf=np.argmin(polyval_1000lf)  #Finds the minimum in the fit, this reduce the noise of the final data
-            final_1000lf=wavelengths[min1000plf+fitxplf]
-            stack_min_1000lf.append(final_1000lf)
-            
-            minimum_2000lf=np.argmin(min_lf[39:74])+39
-            min2000=minimum_2000lf+ofsetlf
-            if min2000 > 73: min2000=73
-            fit_2000lf=np.polyfit(wavelengths[int(minimum_2000lf-ofsetlf):int(min2000)],min_lf[int(minimum_2000lf-ofsetlf):int(min2000)],2)
-            polyval_2000lf=np.polyval(fit_2000lf,wavelengths[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf+1)])
-            min2000plf=np.argmin(polyval_2000lf)
-            wave_index2000=min2000plf+minimum_2000lf-ofsetlf
-            if wave_index2000 > 73: wave_index2000=73
-            final_2000lf=wavelengths[wave_index2000]
-            stack_min_2000lf.append(final_2000lf)
+            if min_lf[39] == 0:
+                
+                stack_min_1000lf.append(0)
+                stack_min_2000lf.append(0)
+                
+            else:
+                minimum_1000lf=np.argmin(min_lf[7:39])+7  #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the midpoint  
+                ofsetlf=5
+                fitxplf=minimum_1000lf-ofsetlf  #This creates a window around the minimum in the convex hull to do a posteriro fit
+                fitxp2lf=np.array(minimum_1000lf+ofsetlf)
+                fitxp2lf[fitxp2lf > 39]= 38
+                fitxlf=wavelengths[int(fitxplf):int(fitxp2lf)]
+                fitylf=min_lf[int(fitxplf):int(fitxp2lf)]
+                fit_1000lf=np.polyfit(fitxlf,fitylf,2)  #Creates a second order fit aroud the minimum
+                polyval_1000lf=np.polyval(fit_1000lf,wavelengths[int(fitxplf):int(fitxp2lf)])
+                min1000plf=np.argmin(polyval_1000lf)  #Finds the minimum in the fit, this reduce the noise of the final data
+                final_1000lf=wavelengths[min1000plf+fitxplf]
+                stack_min_1000lf.append(final_1000lf)
+
+                minimum_2000lf=np.argmin(min_lf[39:74])+39
+                min2000=minimum_2000lf+ofsetlf
+                if min2000 > 73: min2000=73
+                fit_2000lf=np.polyfit(wavelengths[int(minimum_2000lf-ofsetlf):int(min2000)],min_lf[int(minimum_2000lf-ofsetlf):int(min2000)],2)
+                polyval_2000lf=np.polyval(fit_2000lf,wavelengths[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf+1)])
+                min2000plf=np.argmin(polyval_2000lf)
+                wave_index2000=min2000plf+minimum_2000lf-ofsetlf
+                if wave_index2000 > 73: wave_index2000=73
+                if wave_index2000 < 39: wave_index2000=39
+                final_2000lf=wavelengths[wave_index2000]
+                stack_min_2000lf.append(final_2000lf)
     
     
     stack_min1000lfa=np.array(stack_min_1000lf)
@@ -354,39 +383,45 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
         for b in range(lf_cube.data.shape[2]):
 
             imput_shoulderlf=lf_cube.data[:,a,b]
-            imput_min1000lf=min_1000lf.data[a,b]
-            pre_imput_min1000plf=np.where(wavelengths==imput_min1000lf)[0]
-            min1000plf=int(pre_imput_min1000plf)
-            imput_min2000lf=min_2000lf.data[a,b]
-            pre_imput_min2000plf=np.where(wavelengths==imput_min2000lf)[0]
-            min2000plf=int(pre_imput_min2000plf)
-            
+            if imput_shoulderlf[39] == 0:
+                
+                stack_shoulder0lf.append(0)
+                stack_shoulder1lf.append(0)
+                stack_shoulder2lf.append(0)
+                
+            else:
+                imput_min1000lf=min_1000lf.data[a,b]
+                pre_imput_min1000plf=np.where(wavelengths==imput_min1000lf)[0]
+                min1000plf=int(pre_imput_min1000plf)
+                imput_min2000lf=min_2000lf.data[a,b]
+                pre_imput_min2000plf=np.where(wavelengths==imput_min2000lf)[0]
+                min2000plf=int(pre_imput_min2000plf)
 
-            shoulder_0lf=np.where(imput_shoulderlf[0:min1000plf] == max(imput_shoulderlf[0:min1000plf]))[0][-1]  # but the last argument ensures than only the last value is returned
-            ofsetlf=3
-            fitxp0lf=shoulder_0lf-ofsetlf  #This creates a window around the maximum in the convex hull to do a posterior fit
-            fitxp0lf=max(0, fitxp0lf) #If the value is minor to 0, it converts it to 0
-            fitx0lf=wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
-            fity0lf=imput_shoulderlf[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
-            fit_0lf=np.polyfit(fitx0lf,fity0lf,2)  #Creates a second order fit aroud the maxima
-            polyval_0lf=np.polyval(fit_0lf,wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf+1)])
-            max0plf=np.where(polyval_0lf== max(polyval_0lf))[0]  #Finds the maximuum in the fit, this reduce the noise of the final data
-            final_0lf=wavelengths[max0plf+fitxp0lf]
-            stack_shoulder0lf.append(final_0lf)
+                shoulder_0lf=np.where(imput_shoulderlf[0:min1000plf] == max(imput_shoulderlf[0:min1000plf]))[0][-1]  # but the last argument ensures than only the last value is returned
+                ofsetlf=3
+                fitxp0lf=shoulder_0lf-ofsetlf  #This creates a window around the maximum in the convex hull to do a posterior fit
+                fitxp0lf=max(0, fitxp0lf) #If the value is minor to 0, it converts it to 0
+                fitx0lf=wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
+                fity0lf=imput_shoulderlf[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
+                fit_0lf=np.polyfit(fitx0lf,fity0lf,2)  #Creates a second order fit aroud the maxima
+                polyval_0lf=np.polyval(fit_0lf,wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf+1)])
+                max0plf=np.where(polyval_0lf== max(polyval_0lf))[0]  #Finds the maximuum in the fit, this reduce the noise of the final data
+                final_0lf=wavelengths[max0plf+fitxp0lf]
+                stack_shoulder0lf.append(final_0lf[0])
 
-            shoulder_1lf=np.where(imput_shoulderlf[min1000plf:min2000plf+1] == max(imput_shoulderlf[min1000plf:min2000plf+1]))[0][-1]+min1000plf
-            maxs1=shoulder_1lf+ofsetlf
-            if maxs1 > 74: maxs1=74
-            fitxp1lf=shoulder_1lf-ofsetlf
-            fitxp1lf=max(0,fitxp1lf)
-            fit_1lf=np.polyfit(wavelengths[int(fitxp1lf):int(maxs1)],imput_shoulderlf[int(fitxp1lf):int(maxs1)],2)
-            polyval_1lf=np.polyval(fit_1lf,wavelengths[int(fitxp1lf):int(shoulder_1lf+ofsetlf+1)])
-            max1plf=np.where(polyval_1lf== max(polyval_1lf))[0]
-            final_1lf=wavelengths[max1plf+fitxp1lf]
-            stack_shoulder1lf.append(final_1lf)
+                shoulder_1lf=np.where(imput_shoulderlf[min1000plf:min2000plf+1] == max(imput_shoulderlf[min1000plf:min2000plf+1]))[0][-1]+min1000plf
+                maxs1=shoulder_1lf+ofsetlf
+                if maxs1 > 74: maxs1=74
+                fitxp1lf=shoulder_1lf-ofsetlf
+                fitxp1lf=max(0,fitxp1lf)
+                fit_1lf=np.polyfit(wavelengths[int(fitxp1lf):int(maxs1)],imput_shoulderlf[int(fitxp1lf):int(maxs1)],2)
+                polyval_1lf=np.polyval(fit_1lf,wavelengths[int(fitxp1lf):int(shoulder_1lf+ofsetlf+1)])
+                max1plf=np.where(polyval_1lf== max(polyval_1lf))[0]
+                final_1lf=wavelengths[max1plf+fitxp1lf]
+                stack_shoulder1lf.append(final_1lf[0])
 
-            value_2=wavelengths[74]
-            stack_shoulder2lf.append(value_2)
+                value_2=wavelengths[74]
+                stack_shoulder2lf.append(value_2)
 
     stack_shoulder0lfa=np.array(stack_shoulder0lf)
     shoulder0lf.data=stack_shoulder0lfa.reshape(y,z)
