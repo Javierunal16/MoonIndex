@@ -8,20 +8,20 @@ import xarray as xa
 def indexes_total_CH(M3_cube,wavelengths):
     
     #Filtration
-    fourier_cube=M3spectral.filtration.fourier_filter(M3_cube,60,2)
-    gauss_cube=M3spectral.filtration.gauss_filter(fourier_cube,wavelengths)  #Inputs are the original cube and wavelengths
+    fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
+    gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  #Inputs are the original cube and wavelengths
 
     #Continuum removal
-    midpoint_cube=M3spectral.preparation.midpoint(gauss_cube,wavelengths,6,0.002)  #Inputs are the filtered cube, the wavelengths, and the distance and prominence of the peaks
-    hull_cube=M3spectral.preparation.convexhull_removal(gauss_cube,wavelengths,midpoint_cube)  #Inputs are the filtered cube, wavelengths and the midpoint
+    midpoint_cube=MoonIndex.preparation.midpoint(gauss_cube,wavelengths,6,0.002)  #Inputs are the filtered cube, the wavelengths, and the distance and prominence of the peaks
+    hull_cube=MoonIndex.preparation.convexhull_removal(gauss_cube,wavelengths,midpoint_cube)  #Inputs are the filtered cube, wavelengths and the midpoint
     
     #Indexes
     indexes_total=gauss_cube[0:28,:,:].copy()
         
     #Creating the minimums for the convex hull method
-    M3_min1000ch, M3_min2000ch=M3spectral.preparation.find_minimums_ch(hull_cube,midpoint_cube,wavelengths)
+    M3_min1000ch, M3_min2000ch=MoonIndex.preparation.find_minimums_ch(hull_cube,midpoint_cube,wavelengths)
     #Obtaining the shoulders for the convex hull method
-    M3_shoulder0ch, M3_shoulder1ch, M3_shoulder2ch, M3_shoulder3ch=M3spectral.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
+    M3_shoulder0ch, M3_shoulder1ch, M3_shoulder2ch, M3_shoulder3ch=MoonIndex.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
 
     #General indexes
     #R540, reflectance at 540 nm (Zambon et al., 2020)
@@ -87,11 +87,11 @@ def indexes_total_CH(M3_cube,wavelengths):
 def indexes_total_LF(M3_cube,wavelengths):
     
     #Filtration
-    fourier_cube=M3spectral.filtration.fourier_filter(M3_cube,60,2)
-    gauss_cube=M3spectral.filtration.gauss_filter(fourier_cube,wavelengths)  #Inputs are the original cube and wavelengths
+    fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
+    gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  #Inputs are the original cube and wavelengths
 
     #Continuum removal
-    lf_cube=M3spectral.preparation.continuum_removal_lf(gauss_cube,wavelengths)  #Inputs are the filtered cube, wavelengths and the midpoint
+    lf_cube=MoonIndex.preparation.continuum_removal_lf(gauss_cube,wavelengths)  #Inputs are the filtered cube, wavelengths and the midpoint
     
     indexes_total=gauss_cube[0:28,:,:].copy()
         
@@ -116,8 +116,8 @@ def indexes_total_LF(M3_cube,wavelengths):
     M3_spanpx=RGB_spanpx(gauss_cube)
     
     #Creating the minimmums with the linear fit method
-    M3_min1000lf,M3_min2000lf=M3spectral.preparation.find_minimuumslf(lf_cube,wavelengths)
-    M3_shoulder0lf,M3_shoulder1lf,M3_shoulder2lf=M3spectral.preparation.find_shoulders_lf(lf_cube,M3_min1000lf,M3_min2000lf,wavelengths)
+    M3_min1000lf,M3_min2000lf=MoonIndex.preparation.find_minimuumslf(lf_cube,wavelengths)
+    M3_shoulder0lf,M3_shoulder1lf,M3_shoulder2lf=MoonIndex.preparation.find_shoulders_lf(lf_cube,M3_min1000lf,M3_min2000lf,wavelengths)
     
     #Linear fit indexes
     #BCI, band center ar 1000 nm
@@ -668,7 +668,7 @@ def LFBDI (fourier_cube, hull_cube, wavelengths):
             rfl_1000p=np.where(input_hull[0:29] == min(input_hull[0:29]))[0]  #Finding the value of the reflectance
             rfl_1000=input_BDI[rfl_1000p]
          
-            fits_1000BDI=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 1000 nm
+            fits_1000BDI=MoonIndex.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 1000 nm
             fitrfl_1000=np.polyval(fits_1000BDI,wavelengths[rfl_1000p])  #Obtainign the value of the continumm with the fit
             Depth1000=(1-(rfl_1000/fitrfl_1000))  #DOing the division
         
@@ -694,7 +694,7 @@ def LFBDII (fourier_cube, hull_cube, wavelengths):
             rfl_2000p=np.where(input_hull[35:75] == min(input_hull[35:75]))[0]+35 #Finding the value of the reflectance
             rfl_2000=input_BDI[rfl_2000p]
          
-            fits_2000BDI=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 2000 nm
+            fits_2000BDI=MoonIndex.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 2000 nm
             fitrfl_2000=np.polyval(fits_2000BDI,wavelengths[rfl_2000p])  #Obtainign the value of the continumm with the fit
             Depth2000=(1-(rfl_2000/fitrfl_2000))  #DOing the division
         
@@ -723,7 +723,7 @@ def RGB8_LF (fourier_cube,hull_cube,wavelengths):
                 input_RGB8=fourier_cube.data[c,a,b]
                 input_hull=hull_cube.data[:,a,b]
                 
-                fits_2000RGB82=M3spectral.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
+                fits_2000RGB82=MoonIndex.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
                 fitRGB8_2000=np.polyval(fits_2000RGB82, wavelengths[c])
             
                 sum1 += (1-(input_RGB8/fitRGB8_2000))  #Summatory
@@ -744,7 +744,7 @@ def RGB8_LF (fourier_cube,hull_cube,wavelengths):
                 input_RGB82=fourier_cube.data[c,a,b]
                 input_hull4=hull_cube.data[:,a,b]
             
-                fits_2000RGB83=M3spectral.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
+                fits_2000RGB83=MoonIndex.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
                 fitRGB8_1000=np.polyval(fits_2000RGB83, wavelengths[c])
             
                 sum2 += (1-(input_RGB82/fitRGB8_1000))
