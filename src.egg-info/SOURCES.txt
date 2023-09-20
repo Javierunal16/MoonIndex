@@ -1,8 +1,0 @@
-README.md
-setup.py
-M3spectral/__init__.py
-M3spectral/helloworld.py
-src.egg-info/PKG-INFO
-src.egg-info/SOURCES.txt
-src.egg-info/dependency_links.txt
-src.egg-info/top_level.txt

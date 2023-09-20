@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: MoonIndex
+Version: 1.0
+Author: Javier Suarez
+Author-email: jsuarezvalencia@constructor.university
+License: MIT
+Requires-Python: >=3.10
+License-File: LICENSE.txt
