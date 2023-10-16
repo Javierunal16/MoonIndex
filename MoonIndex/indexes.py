@@ -84,14 +84,14 @@ def indexes_total_CH(M3_cube,wavelengths):
 
 
 #All the indexes for the lienar fit method
-def indexes_total_LF(M3_cube,wavelengths):
+def indexes_total_LF(M3_cube,wavelengths,order1,order2):
     
     #Filtration
     fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
     gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  #Inputs are the original cube and wavelengths
 
     #Continuum removal
-    lf_cube=MoonIndex.preparation.continuum_removal_lf(gauss_cube,wavelengths)  #Inputs are the filtered cube, wavelengths and the midpoint
+    lf_cube=MoonIndex.preparation.continuum_removal_lf(gauss_cube,wavelengths,order1,order2)  #Inputs are the filtered cube, wavelengths and the orders of polynomials
     
     indexes_total=gauss_cube[0:28,:,:].copy()
         

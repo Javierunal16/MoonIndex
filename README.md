@@ -24,6 +24,7 @@ First import the cube and the Wavelegnths.txt file using rioxarray and numpy:
 
 `input_cube=riox.open_rasterio('input_cube.tiff')`  
 `wavelengths=np.loadtxt('Wavelength.txt', delimiter=",")`
+`wavelengths=(wavelengths).astype(np.float32)`
 
 Then a function to prepare the data:
 
@@ -40,21 +41,21 @@ Or:
 ## List of indexes
 | Index Name                          | Abrev. Name | Index type    | Source                     |
 | ----------------------------------- | ----------- | ------------- | -------------------------- |
-| Reflectance at 540 nm               | R540        | Parameter     | Zambon et al. (2020)       |
-| Band center at 1 µm                 | BCI         | Parameter     | Zambon et al. (2020)       |
-| Band center at 2 µm                 | BCII        | Parameter     | Zambon et al. (2020)       |
-| Band depth at 1 µm                  | BDI         | Parameter     | Zambon et al. (2020)       |
-| Band deepth at 2 µm                 | BDII        | Parameter     | Zambon et al. (2020)       |
-| Spectral slope at 1 µm              | SS          | Parameter     | Zambon et al. (2020)       |
+| Reflectance at 540 nm               | R540        | Parameter     | Adams and McCord (1971)    |
+| Band center at 1 µm                 | BCI         | Parameter     | Adams (1974)               |
+| Band center at 2 µm                 | BCII        | Parameter     | Adams (1974)               |
+| Band depth at 1 µm                  | BDI         | Parameter     | Adams (1974)               |
+| Band deepth at 2 µm                 | BDII        | Parameter     | Adams (1974)               |
+| Spectral slope at 1 µm              | SS          | Parameter     | Hazen et al. (1978)        |
 | Clementine-like red channel         | Clem RED    | Parameter     | Lucey et al. (2000)        |
 | Clementine-like green channel       | Clem GREEN  | Parameter     | Lucey et al. (2000)        |
 | Clementine-like blue channel        | Clem BLUE   | Parameter     | Lucey et al. (2000)        |
 | Band depth at 1.9 µm                | BD1900      | Parameter     | Bretzfelder et al. (2020)  |
 | Integrated band depth at 1 µm       | IBDI        | Parameter     | Bretzfelder et al. (2020)  |
 | Integrated band depth at 2 µm       | IBDII       | Parameter     | Bretzfelder et al. (2020)  |
-| Band area at 1 µm                   | BAI         | Parameter     | Horgan et al. (2014)       |
+| Band area at 1 µm                   | BAI         | Parameter     | Cloutis et al. (1986)      |
 | Band area at 2 µm                   | BAII        | Parameter     | This papper                |
-| Band asymmetry at 1 µm              | ASYI        | Parameter     | Horgan et al. (2014)       |
+| Band asymmetry at 1 µm              | ASYI        | Parameter     | Cloutis et al. (1986)      |
 | Band asymmetry at 2 µm              | ASYII       | Parameter     | This papper                |
 | Olivine parameter                   | Ol          | Parameter     | Corley et al. (2018)       |
 | Spinel ratio                        | Sp1         | Parameter     | Pieters et al. (2014)      |
@@ -62,8 +63,8 @@ Or:
 | Pyroxene ratio                      | Px          | Parameter     | Pieters et al. (2014)      |
 | Pure anorthosite ratio              | An          | Parameter     | Pieters et al. (2014)      |
 | Band depth at 950 nm                | BD950       | Parameter     | Besse et al. (2011)        |
-| Badn depth at 1.05 µm               | BD1050      | Parameter     | Besse et al. (2011)        |
-| Badn depth at 1.25 µm               | BD1250      | Parameter     | Besse et al. (2011)        |
+| Band depth at 1.05 µm               | BD1050      | Parameter     | Besse et al. (2011)        |
+| Band depth at 1.25 µm               | BD1250      | Parameter     | Besse et al. (2011)        |
 | Reflectnace at 1.58 µm              | R1580       | Parameter     | Besse et al. (2011)        |
 | Iron oxide parameter                | Fe          | Parameter     | Wu et al. (2012)           |
 | Titanium parameter                  | Ti          | Parameter     | Wu et al. (2012)           |

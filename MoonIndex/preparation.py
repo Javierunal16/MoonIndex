@@ -276,7 +276,7 @@ def midpoint(fourier_cube,wavelengths,peak_distance,peak_prominence):
 #LINEAR FIT METHOD
 
 #Continuum removal with the linear fit method
-def continuum_removal_lf (gauss_cube,wavelengths2):
+def continuum_removal_lf (gauss_cube,wavelengths2,order1,order2):
     lf=gauss_cube[0:74,:,:].copy()
     stack_lf=[]
     x,y,z=lf[:,:,:].shape
@@ -297,12 +297,12 @@ def continuum_removal_lf (gauss_cube,wavelengths2):
                 fity10001=lf_cube[1:7]
                 fity10002=lf_cube[39:42]
                 fity1000=np.hstack((fity10001,fity10002))
-                fit1000=np.polyfit(fitx1000,fity1000,2)
+                fit1000=np.polyfit(fitx1000,fity1000,order1)
                 polival1000=np.polyval(fit1000,wavelengths[0:42])
 
                 fitx2000=np.hstack((fitx10002,wavelengths[73])) #Fit for 2000 nm, linear
                 fity2000=np.hstack((fity10002,lf_cube[73]))
-                fit2000=np.polyfit(fitx2000,fity2000,1)
+                fit2000=np.polyfit(fitx2000,fity2000,order2)
                 polival2000=np.polyval(fit2000,wavelengths[42:74])
 
                 continuum=np.hstack((polival1000,polival2000))  #Continuum removal by dividing
