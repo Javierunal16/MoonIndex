@@ -35,11 +35,11 @@ def image_plot(image_input,size2,title):
 
 
 #Comparing images
-def plot_comparison (cube_plot1, cube_plot2, title1, title2, band):
+def plot_comparison (cube_plot1, cube_plot2, band1,band2, title1, title2):
     plot1, ax=plt.subplots(1,2)
-    ax[0].imshow(cube_plot1[band,:,:])
+    ax[0].imshow(cube_plot1[band1,:,:])
     ax[0].set_title(title1)
-    ax[1].imshow(cube_plot2[band,:,:])
+    ax[1].imshow(cube_plot2[band2,:,:])
     ax[1].set_title(title2)
     return(plt.show(plot1))
 
@@ -135,14 +135,6 @@ def profile_plot (wavelengths,profile_singlecube,title_singleprofile, pixelx2,pi
     plt.title(tittle1)
     return plt.show(fig4)
 
-#Plotting the continums
-def plot_continnums (fourier_cube,fitp_1000,fitp_2000,wavelengths,x_coord,y_coord):
-    
-    plt.plot(wavelengths,fourier_cube[:,y_coord,x_coord],label='Spectrum')
-    plt.plot(wavelengths,np.polyval(fitp_1000,wavelengths), label='Fit 1000')
-    plt.plot(wavelengths,np.polyval(fitp_2000,wavelengths), label='Fit 2000')    
-    plt.legend()
-    return 
 
 #Compares the cubes before and after the filtering
 

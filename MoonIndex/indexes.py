@@ -159,22 +159,22 @@ def indexes_total_LF(M3_cube,wavelengths,order1,order2):
 
 
 #R540, reflectance at 540 nm
-def R540 (fourier_cube):
-    cube_R540=fourier_cube[0,:,:]  #The first band corresponds to that wavelength
+def R540 (gauss_cube):
+    cube_R540=gauss_cube[0,:,:]  #The first band corresponds to that wavelength
     cube_R540.data[cube_R540.data==0]=np.nan
     return cube_R540
 
 
 #R1580, reflectance at 540 nm
-def R1580 (fourier_cube):
-    cube_R1580=fourier_cube[47,:,:]  #The first band corresponds to that wavelength
+def R1580 (gauss_cube):
+    cube_R1580=gauss_cube[47,:,:]  #The first band corresponds to that wavelength
     cube_R1580.data[cube_R1580.data==0]=np.nan
     return cube_R1580
 
 
 #Olivine detection index
-def olivine (fourier_filter):
-    ol=(((fourier_filter[50,:,:]/((0.1*fourier_filter[21,:,:])+(0.1*fourier_filter[29,:,:])+(0.4*fourier_filter[35,:,:])+(0.4*fourier_filter[42,:,:])))-1))
+def olivine (gauss_cube):
+    ol=(((gauss_cube[50,:,:]/((0.1*gauss_cube[21,:,:])+(0.1*gauss_cube[29,:,:])+(0.4*gauss_cube[35,:,:])+(0.4*gauss_cube[42,:,:])))-1))
     return ol
 
 
@@ -647,113 +647,4 @@ def RGB8 (fourier_cube,hull_cube):
     RGB8_total=fourier_cube[0:3,:,:].copy()
     RGB8_total.data=np.dstack((RGB81,RGB82,RGB83)).transpose(2,0,1)
     RGB8_total.data[RGB8_total.data==0]=np.nan
-    return RGB8_total
-
-##INDEXES WITH THE LIENAR FIT REMOVAL METHOD
-
-
-
-#BDI, band depth at the 1000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
-def LFBDI (fourier_cube, hull_cube, wavelengths):
-    cube_BDI=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_BDI=[]
-    y,z=hull_cube[0,:,:].shape
-    
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
-            
-            input_BDI=fourier_cube.data[:,a,b]
-            input_hull=hull_cube.data[:,a,b]
-        
-            rfl_1000p=np.where(input_hull[0:29] == min(input_hull[0:29]))[0]  #Finding the value of the reflectance
-            rfl_1000=input_BDI[rfl_1000p]
-         
-            fits_1000BDI=MoonIndex.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 1000 nm
-            fitrfl_1000=np.polyval(fits_1000BDI,wavelengths[rfl_1000p])  #Obtainign the value of the continumm with the fit
-            Depth1000=(1-(rfl_1000/fitrfl_1000))  #DOing the division
-        
-            stack_BDI.append(Depth1000)
-            
-    stack_BDIa=np.array(stack_BDI)
-    cube_BDI.data=stack_BDIa.reshape(y,z)
-    return cube_BDI
-
-
-#BDII, band depth at the 2000 nm absorption peak, it is obtained by dividing the reflectance by the value of the continnum at that location, always positive
-def LFBDII (fourier_cube, hull_cube, wavelengths):
-    cube_BDII=hull_cube[0,:,:].copy()  #Copying the cube to save the results
-    stack_BDII=[]
-    y,z=hull_cube[0,:,:].shape
-    
-    for a in range(fourier_cube.data.shape[1]):
-        for b in range(fourier_cube.data.shape[2]):
-            
-            input_BDI=fourier_cube.data[:,a,b]
-            input_hull=hull_cube.data[:,a,b]
-        
-            rfl_2000p=np.where(input_hull[35:75] == min(input_hull[35:75]))[0]+35 #Finding the value of the reflectance
-            rfl_2000=input_BDI[rfl_2000p]
-         
-            fits_2000BDI=MoonIndex.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Fitting at 2000 nm
-            fitrfl_2000=np.polyval(fits_2000BDI,wavelengths[rfl_2000p])  #Obtainign the value of the continumm with the fit
-            Depth2000=(1-(rfl_2000/fitrfl_2000))  #DOing the division
-        
-            stack_BDII.append(Depth2000)
-            
-    stack_BDIIa=np.array(stack_BDII)
-    cube_BDII.data=stack_BDIIa.reshape(y,z)
-    return cube_BDII
-
-
-#RGB8 Color 1, R: BD 1900, IBD 2000, IBD 1000
-def RGB8_LF (fourier_cube,hull_cube,wavelengths):
-    y,z=hull_cube[0,:,:].shape
-    #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
-    RGB81=(1 - (fourier_cube[55,:,:]/((fourier_cube[70,:,:]-fourier_cube[39,:,:]/2498-1408)*((1898-1408)+fourier_cube[39,:,:]))))
-    
-    #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 2000 nm region 
-    RGB82=fourier_cube[0,:,:].copy()
-    RGB82_slice=fourier_cube[49:70,:,:]  #Defines the section to iterate around 2000 nm
-    stack_RGB82=[]
-    
-    for a in range(RGB82_slice.data.shape[1]):
-        for b in range(RGB82_slice.data.shape[2]):
-            for c in range(RGB82_slice.data.shape[0]):
-                sum1=0
-                input_RGB8=fourier_cube.data[c,a,b]
-                input_hull=hull_cube.data[:,a,b]
-                
-                fits_2000RGB82=MoonIndex.preparation.continnum_2000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
-                fitRGB8_2000=np.polyval(fits_2000RGB82, wavelengths[c])
-            
-                sum1 += (1-(input_RGB8/fitRGB8_2000))  #Summatory
-            stack_RGB82.append(sum1)
-        
-    stack_RGB82a=np.array(stack_RGB82)
-    RGB82.data=stack_RGB82a.reshape(y,z)
-    
-     #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor beetwen the reflectance and continnum value of the band that makes the 1000 nm region
-    RGB83=fourier_cube[0,:,:].copy()
-    RGB83_slice=fourier_cube[8:34,:,:]  #Defines the section to iterate around 2000 nm
-    stack_RGB83=[]
-    
-    for a in range(RGB83_slice.data.shape[1]):
-        for b in range(RGB83_slice.data.shape[2]):
-            for c in range(RGB83_slice.data.shape[0]):
-                sum2=0
-                input_RGB82=fourier_cube.data[c,a,b]
-                input_hull4=hull_cube.data[:,a,b]
-            
-                fits_2000RGB83=MoonIndex.preparation.continnum_1000(fourier_cube.data, hull_cube.data,wavelengths,b,a)  #Continumm function to get the value
-                fitRGB8_1000=np.polyval(fits_2000RGB83, wavelengths[c])
-            
-                sum2 += (1-(input_RGB82/fitRGB8_1000))
-            stack_RGB83.append(sum2)
-            
-    stack_RGB83a=np.array(stack_RGB83)
-    RGB83.data=stack_RGB83a.reshape(y,z)
-    
-    #Making the composite
-    RGB8_total=fourier_cube[0:3,:,:].copy()
-    RGB8_total.data=np.dstack((RGB81,RGB82,RGB83)).transpose(2,0,1)
     return RGB8_total

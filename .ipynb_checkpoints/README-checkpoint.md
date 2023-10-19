@@ -22,9 +22,9 @@ The notebook called M3_Indexes.ipynb under scripts details the workflow followed
 
 First import the cube and the Wavelegnths.txt file using rioxarray and numpy:
 
-`input_cube=riox.open_rasterio('input_cube.tiff')`  
-`wavelengths=np.loadtxt('Wavelength.txt', delimiter=",")`
-`wavelengths=(wavelengths).astype(np.float32)`
+`input_cube=rioxarray.open_rasterio('input_cube.tiff')`  
+`wavelengths=numpy.loadtxt('Wavelength.txt', delimiter=",")`
+`wavelengths=(wavelengths).astype(numpy.float32)`
 
 Then a function to prepare the data:
 
@@ -74,7 +74,7 @@ Or:
 | Color composite 2                   | RGB 2       | RGB composite | Zambon et al. (2020)       |
 | Color composite 2                   | RGB 3       | RGB composite | Zambon et al. (2020)       |
 | Color composite of band area        | RGB4        | RGB composite | Horgan et al. (2014)       |
-| Color cmposite of band asymmetry    | RGB5        | RGB composite | Horgan et al. (2014)       |
+| Color composite of band asymmetry    | RGB5        | RGB composite | Horgan et al. (2014)       |
 | Color composite 6                   | RGB6        | RGB composite | Besse et al. (2011)        |
 | Color composite 7                   | RGB7        | RGB composite | Besse et al. (2011)        |
 | Near infrarred color composite      | NIR1        | RGB composite | Bretzfelder et al. (2020)  |

@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     author='Javier Suarez',
     author_email='jsuarezvalencia@constructor.university',
-    license='MIT',
+    license='GPL',
     install_requires=['affine==2.3.1'
     , 'anyio==3.6.2'
     , 'argon2-cffi==21.3.0'

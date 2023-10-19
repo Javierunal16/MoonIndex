@@ -436,7 +436,7 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
     return (shoulder0lf, shoulder1lf, shoulder2lf)
 
 #Continumm fit 1000
-def continnum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
+def continuum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
     
             shoulder_0p=np.where(hull_cube[0:20,y_continum,x_continum] == max(hull_cube[0:20,y_continum,x_continum]))[0][-1]  #Finding the shoulders, as they will limit the fit
             shoulder_0y=filtered_cube[shoulder_0p,y_continum,x_continum]
@@ -453,7 +453,7 @@ def continnum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
 
 
 #Continumm fit 2000       
-def continnum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
+def continuum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):
             shoulder_2p=np.where(hull_cube[40:66,y_continum,x_continum] == max(hull_cube[40:66,y_continum,x_continum]))[0][-1]+40  #Finding the shoulders, as they will limit the fit
             shoulder_2y=filtered_cube[shoulder_2p,y_continum,x_continum]
             shoulder_2x=wavelengths[shoulder_2p]
