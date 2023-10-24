@@ -80,7 +80,7 @@ def indexes_total_CH(M3_cube,wavelengths):
     for e in range(28):
         indexes_final_ch[bands[e]] = indexes_total[e,:,:]
         
-    return(indexes_final_ch)
+    return(indexes_final_ch.astype(np.float32))
 
 
 #All the indexes for the lienar fit method
@@ -155,7 +155,7 @@ def indexes_total_LF(M3_cube,wavelengths,order1,order2):
     for e in range(28):
         indexes_final_lf[bands[e]] = indexes_total[e,:,:]
 
-    return(indexes_final_lf)
+    return(indexes_final_lf.astype(np.float32))
 
 
 #R540, reflectance at 540 nm

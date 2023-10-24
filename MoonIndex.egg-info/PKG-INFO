@@ -11,8 +11,8 @@ Requires-Dist: matplotlib==3.8.0
 Requires-Dist: matplotlib-inline==0.1.6
 Requires-Dist: numpy==1.26.1
 Requires-Dist: opencv-python==4.8.1.78
-Requires-Dist: plotly>=5.17.0
-Requires-Dist: pyproj>=3.6.1
+Requires-Dist: plotly==5.17.0
+Requires-Dist: pyproj==3.6.1
 Requires-Dist: pysptools==0.15.0
 Requires-Dist: python-dateutil==2.8.2
 Requires-Dist: rasterio==1.3.9
