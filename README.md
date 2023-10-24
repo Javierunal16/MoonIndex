@@ -1,3 +1,8 @@
+
+
+[![DOI](https://zenodo.org/badge/614282836.svg)](https://zenodo.org/doi/10.5281/zenodo.10036998)
+
+
 # MoonIndex
 MoonIndex is a python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the litrature, some were formualted in this work. The tool uses map-projected hyperspectral cubes and common python libraries to achieve the indexes. The general procces of the tool consist of: preparation, filtration, continuum removal and creation of the indexes.
 
