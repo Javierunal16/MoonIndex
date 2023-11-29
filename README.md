@@ -9,7 +9,7 @@ MoonIndex is a python library to create spectral indexes from the Moon Mineralog
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.png)
 
 ## Requirements
-To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the procces. 
+To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the procces. Moonindex requires python 3.12.
 
 ## Instalation
 The instalation can be done via PyPI using pip:
@@ -21,7 +21,7 @@ Or after downloading the MoonIndex-1.0.tar.gz file under dist:
 `pip install MoonIndex-1.0.tar.gz`
 
 ## Example
-The notebook called M3_Indexes.ipynb under scripts details the workflow followed to obtain the indexes.
+The notebook called M3_Indexes.ipynb under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes, since the process is intensive. The sample cube used in this notebook can be found at: https://zenodo.org/records/10014564
 
 ## Straighforwad proccesing
 
@@ -35,16 +35,20 @@ Then a function to prepare the data:
 
 `M3_cube=MoonIndex.preparation.attach_wavelen(input_cube,wavelengths)`
 
+If you desire to crop the cube, you cna use:
+
+`M3_cube=MoonIndex.preparation.crop_cube(M3_cube,x1,y1,x2,y2)` Where x and y are the coordinates in the reference system of your cube.
+
 And then, to create the indexes:
 
 `M3_full_CH=MoonIndex.indexes.indexes_total_CH(M3_cube,wavelengths)` With the convex hull continuum-removal method.
 
 Or:
 
-`M3_full_LF=MoonIndex.indexes.indexes_total_LF(M3_cube,wavelengths)` With the linear-fit continuum removal method.
+`M3_full_LF=MoonIndex.indexes.indexes_total_LF(M3_cube,wavelengths,2,1)` With the linear-fit continuum removal method (the last two variables are the polynomial order fo the fit around the 1000 and 2000 nm bands).
 
 ## List of indexes
-| Index Name                          | Abrev. Name | Index type    | Source                     |
+| Index Name                          | Abrev. Name | Product type    | Source                     |
 | ----------------------------------- | ----------- | ------------- | -------------------------- |
 | Reflectance at 540 nm               | R540        | Parameter     | Adams and McCord (1971)    |
 | Band center at 1 µm                 | BCI         | Parameter     | Adams (1974)               |
@@ -82,5 +86,5 @@ Or:
 | Color composite of band asymmetry    | RGB5        | RGB composite | Horgan et al. (2014)       |
 | Color composite 6                   | RGB6        | RGB composite | Besse et al. (2011)        |
 | Color composite 7                   | RGB7        | RGB composite | Besse et al. (2011)        |
-| Near infrarred color composite      | NIR1        | RGB composite | Bretzfelder et al. (2020)  |
+| Near infrarred color composite      | RGB8        | RGB composite | Bretzfelder et al. (2020)  |
 | Color composite of spinel           | Spanpx      | RGB composite | Moriarty III et al. (2022) |
