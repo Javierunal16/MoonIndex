@@ -35,7 +35,7 @@ Then a function to prepare the data:
 
 `M3_cube=MoonIndex.preparation.attach_wavelen(input_cube,wavelengths)`
 
-If you desire to crop the cube, you cna use:
+If you desire to crop the cube, you can use:
 
 `M3_cube=MoonIndex.preparation.crop_cube(M3_cube,x1,y1,x2,y2)` Where x and y are the coordinates in the reference system of your cube.
 
@@ -45,7 +45,7 @@ And then, to create the indexes:
 
 Or:
 
-`M3_full_LF=MoonIndex.indexes.indexes_total_LF(M3_cube,wavelengths,2,1)` With the linear-fit continuum removal method (the last two variables are the polynomial order fo the fit around the 1000 and 2000 nm bands).
+`M3_full_LF=MoonIndex.indexes.indexes_total_LF(M3_cube,wavelengths,2,1)` With the linear-fit continuum removal method (the last two variables are the polynomial order for the fit around the 1000 and 2000 nm bands).
 
 ## List of indexes
 | Index Name                          | Abrev. Name | Product type    | Source                     |
