@@ -168,8 +168,10 @@ def profiles_comparison(wavelengths,first_cube, second_cube,title1,title2, in_x,
     
     plt.plot(wavelengths[0:len(first_average)], first_average, label=title1)
     plt.plot(wavelengths[0:len(second_average)],second_average, label=title2)
+    plt.xlabel("Wavelengths (um)")
+    plt.ylabel("Reflectance")
     plt.legend()
-    plt.title("Profife comparison")
+    plt.title("Profile comparison")
     return plt
 
 
@@ -279,8 +281,9 @@ def convexhull_plot(filtered_cube, wavelengths_full,mid_point,y_hull,x_hull):
     axes[0].plot(*continuum_points.T, label='Continuum')
     axes[0].legend()
     axes[1].plot(wavelengths, average_prime, label='Data / Continuum')
+    plt.xlabel("Wavelengths (um)")
+    plt.ylabel("Reflectance")
     axes[1].legend()
-
     return plt
 
 
@@ -322,5 +325,7 @@ def linearfit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):
     axes[0].plot(wavelengths[0:74],continuum, label='Continuum')
     axes[0].legend()
     axes[1].plot(wavelengths[0:74], continum_removed[0:74], label='Data / Continuum')
+    plt.xlabel("Wavelengths (um)")
+    plt.ylabel("Reflectance")
     axes[1].legend()
     return plt
