@@ -32,7 +32,7 @@ def crop_cube (initial_cube,minnx,minny,maxxx,maxxy):
     
     Inputs: 
     initial_cube = prepared cube, 
-    minnx = lowest x lmiting value,
+    minnx = lowest x limiting value,
     minny = lowest y limiting value,
     maxxx = highest x limiting value, 
     maxxy = highest y limiting value.
@@ -65,7 +65,7 @@ def crop_cube_size (initial_cube,cx1,cy1,cx2,cy2):
     
     Inputs: 
     initial_cube = prepared cube, 
-    cx1 = lowest x lmiting value,
+    cx1 = lowest x limiting value,
     cy1 = highest x limiting value,
     cx2 = lowest y limiting value,
     cy2 = highest y limiting value.
@@ -78,17 +78,13 @@ def crop_cube_size (initial_cube,cx1,cy1,cx2,cy2):
     M3_cubecrop=initial_cube[:,cy1:cy2,cx1:cx2]
     rect_crop=patches.Rectangle((cx1,cy1),(cx2-cx1),(cy2-cy1),linewidth=1, edgecolor='r', facecolor='none')
 
-    plot0, (axs, axs1)=plt.subplots(1,2, figsize=(5,20))
-    #Plotting the cube
-    initial_cube[0:3,:,:].plot.imshow(ax=axs,robust=True,add_labels=False)
-    axs.add_patch(rect_crop)
-    axs.set_aspect(1)
-    axs.set_title('Full cube')
-    #Plotting the cropped cube
-    M3_cubecrop[0:3,:,:].plot.imshow(ax=axs1,robust=True,add_labels=False)
-    axs1.set_aspect(1)
-    axs1.set_title('Cropped cube')
-    plt.tight_layout() 
+    plot0, ax=plt.subplots(1,2, figsize=(5,20))
+    #To plot using the dimensions of the cube instead of the coordinates we should use only one band, in this case the 540 nm band
+    ax[0].imshow(initial_cube[5,:,:], cmap='gray')
+    ax[0].set_title('Full cube')
+    ax[0].add_patch(rect_crop)
+    ax[1].imshow(M3_cubecrop[5,:,:], cmap='gray')
+    ax[1].set_title('Cropped cube')
     return M3_cubecrop
 
 ###CONTINUUM-REMOVAL
