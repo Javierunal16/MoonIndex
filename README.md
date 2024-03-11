@@ -4,7 +4,7 @@
 
 
 # MoonIndex
-MoonIndex is a python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the litrature, some were formualted in this work. The tool uses map-projected hyperspectral cubes and common python libraries to achieve the indexes. The general procces of the tool consist of: preparation, filtration, continuum removal and creation of the indexes.
+MoonIndex is a python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the litrature, some were formualted in this work. The tool uses map-projected hyperspectral cubes and common python libraries to achieve the indexes. The general procces of the tool consist of: preparation, filtration, continuum removal and creation of the indexes (Tested on Python 3.11).
 
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.png)
 

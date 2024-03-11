@@ -352,11 +352,11 @@ def band_depth (removed_cube,minimum,wavelengths):
             
             input_depth=removed_cube.data[:,a,b]
                     
-            if input_depth[39] == 0:   
+            if minimum[a,b] == 0:   
                     stack_depth.append(0)
             else:
                 input_min=minimum.data[a,b]
-                pre_input_minp=np.where(wavelengths==input_min)[0]
+                pre_input_minp=np.where(wavelengths==input_min)[0][0]
                 minp=int(pre_input_minp)
                 #Finding the value of the band depth
                 band_depth=1 - input_depth[minp]  
@@ -388,14 +388,14 @@ def SSI (gauss_cube,shoulder1, wavelengths):
             
             input_SS1200=gauss_cube.data[:,a,b]
                     
-            if input_SS1200[39] == 0:   
+            if shoulder1[a,b] == 0:   
                     stack_SSI.append(0)
             else:
                 input_shoulder1=shoulder1.data[a,b]
                 pre_shoulder1=np.where(wavelengths==input_shoulder1)[0]
                 shoulder1p=int(pre_shoulder1)
                 #Calculating the slope beetwen the R540 and the shoulder
-                SS=((input_SS1200[shoulder1p])-input_SS1200[0])/(((wavelengths[shoulder1p])-540.84)*input_SS1200[0])  
+                SS=((input_SS1200[shoulder1p])-input_SS1200[0])/(((wavelengths[shoulder1p])-0.54084)*0.54084)  
                 stack_SSI.append(SS)
         
     stack_SSIa=np.array(stack_SSI)
@@ -517,7 +517,7 @@ def BA (removed_cube,wavelengths,shoulder0,shoulder1):
             s0 = shoulder0.data[a,b]  
             s1 = shoulder1.data[a,b]
                     
-            if s0 == 0:   
+            if s0 == 0 or s1 == 0:   
                     stack_BAI.append(0)
             else:
                  #Creating the range
@@ -569,7 +569,7 @@ def RGB4 (gauss_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000):
             s0 = shoulder0.data[a,b]  
             s1 = shoulder1.data[a,b]
                     
-            if s0 == 0:   
+            if s0 == 0 or s1 == 0:   
                     stack_BAI.append(0)
             else:
                 #Creating the range
@@ -630,7 +630,7 @@ def ASY (removed_cube,wavelengths,shoulder0,shoulder1,min1000):
             s11 = shoulder1.data[a,b]
             input_min1000=min1000.data[a,b]
             
-            if s00 == 0:   
+            if s00 == 0 or s11 == 0:   
                     stack_ASY1.append(0)
                     stack_ASY2.append(0)
                     
@@ -717,7 +717,7 @@ def RGB5 (gauss_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
             s11 = shoulder1.data[a,b]
             input_min1000=min1000.data[a,b]
             
-            if s00 == 0:   
+            if s00 == 0 or s11 == 0:   
                     stack_ASY1.append(0)
                     stack_ASY2.append(0)
                     

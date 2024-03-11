@@ -41,7 +41,7 @@ def crop_cube (initial_cube,minnx,minny,maxxx,maxxy):
     Cropped cube.'''
 
     #Check input coordinates
-    if minnx < initial_cube.coords['x'].min().data or minny < initial_cube.coords['y'].min().data or maxxx > initial_cube.coords['x'].max().data or maxxy > input_cube.coords['y'].max().data:
+    if minnx < initial_cube.coords['x'].min().data or minny < initial_cube.coords['y'].min().data or maxxx > initial_cube.coords['x'].max().data or maxxy > initial_cube.coords['y'].max().data:
         raise ValueError("Invalid coordinate")
     #Assigning coordinates
     croped_cube=initial_cube.rio.clip_box(minx=minnx,miny=minny,maxx=maxxx,maxy=maxxy)
@@ -225,7 +225,7 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
             else:
                 #Finds the minimum value of the reflectance in wavelengths, the limtis is defined by the tie-point  
                 input_midpoint=midpoint.data[a,b]
-                pre_midpointp=np.where(wavelengths==input_midpoint)[0]
+                pre_midpointp=np.where(wavelengths==input_midpoint)[0][0]
                 midpointp=int(pre_midpointp)
                 minimum_1000=np.argmin(input_hull[0:midpointp])  
                 ofset=5
@@ -244,24 +244,34 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
                 #Finds the minimum in the fit, this reduce the noise of the final data
                 min1000p=np.where(polyval_1000== min(polyval_1000))[0]  
                 final_1000=wavelengths[min1000p+fitxp]
-                stack_min1000.append(final_1000[0])
-                #This one does not need specific defintion of indexes vecause there is no risk of ocerlap with the midpoint
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
+                if input_hull[min1000p+fitxp][0] >= 0.98:
+                    stack_min1000.append(0)
+                else:
+                    stack_min1000.append(final_1000[0])
+                
+                #This one does not need specific defintion of indexes because there is no risk of overlap with the midpoint
                 minimum_2000=np.argmin(input_hull[midpointp:74])+midpointp  
                 fit_2000=np.polyfit(wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset)],input_hull[int(minimum_2000-ofset):int(minimum_2000+ofset)],2)
                 polyval_2000=np.polyval(fit_2000,wavelengths[int(minimum_2000-ofset):int(minimum_2000+ofset+1)])
                 min2000p=np.where(polyval_2000== min(polyval_2000))[0]
                 final_2000=wavelengths[min2000p+minimum_2000-ofset]
-                stack_min2000.append(final_2000[0])
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
+                if input_hull[min2000p+minimum_2000-ofset][0] >= 0.98:
+                    stack_min2000.append(0)
+                else:
+                    stack_min2000.append(final_2000[0])
+                    
     #Making the new cubes
     stack_min1000a=np.array(stack_min1000)
     stack_min1000a[stack_min1000a ==  wavelengths[0]]= wavelengths[18]
     stack_min1000b=stack_min1000a.astype(np.float32)
-    min1000.data=stack_min1000b.reshape(ymin1000,zmin1000
+    min1000.data=stack_min1000b.reshape(ymin1000,zmin1000)
                                        
     stack_min2000a=np.array(stack_min2000)
     stack_min2000b=stack_min2000a.astype(np.float32)
     min2000.data=stack_min2000b.reshape(ymin2000,zmin2000)
-    return (min1000,min2000)
+    return (min1000,min2000) 
 
 
 def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
@@ -294,23 +304,17 @@ def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
 
             input_hull_shoulder=hull_cube.data[:,a,b]
             #Adding zeros to nodata pixels
-            if input_hull_shoulder[39] == 0:
-                
+            if min_1000[a,b] == 0:
                 stack_shoulder0.append(0)
                 stack_shoulder1.append(0)
-                stack_shoulder2.append(0)
-                stack_shoulder3.append(0)
             else:
                 #Input of the minimums and tie-point
                 input_midpoint_shoulder=midpoint.data[a,b]
-                pre_midpointp=np.where(wavelengths==input_midpoint_shoulder)[0]
+                pre_midpointp=np.where(wavelengths==input_midpoint_shoulder)[0][0]
                 midpoint_shoulderp=int(pre_midpointp)
                 input_min1000=min_1000.data[a,b]
-                pre_input_min1000p=np.where(wavelengths==input_min1000)[0]
+                pre_input_min1000p=np.where(wavelengths==input_min1000)[0][0]
                 min1000p=int(pre_input_min1000p)
-                input_min2000=min_2000.data[a,b]
-                pre_input_min2000p=np.where(wavelengths==input_min2000)[0]
-                min2000p=int(pre_input_min2000p)
                 #Calculating the left shoulder of the 1 um absorption band. Works similar to the maximums, but the last argument ensures than only the last value is returned
                 shoulder_0=np.where(input_hull_shoulder[0:min1000p] == max(input_hull_shoulder[0:min1000p]))[0][-1]  
                 ofset=3
@@ -336,21 +340,34 @@ def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
                 max1p=np.where(polyval_1== max(polyval_1))[0]
                 final_1=wavelengths[max1p+fitxp1]
                 stack_shoulder1.append(final_1[0])
+                
+                
+    for a in range(hull_cube.data.shape[1]):
+        for b in range(hull_cube.data.shape[2]):
+
+            input_hull_shoulder=hull_cube.data[:,a,b]
+            #Adding zeros to nodata pixels
+            if min_2000[a,b] == 0:
+                stack_shoulder2.append(0)
+                stack_shoulder3.append(0)
+            else:
+                input_min2000=min_2000.data[a,b]
+                pre_input_min2000p=np.where(wavelengths==input_min2000)[0][0]
+                min2000p=int(pre_input_min2000p)
                 #Calculating the left shoulder of the 2 um absorption band
                 #To avoid errors where the aborsoption feature is weak, if the value is too low it assing the midpoint
                 if midpoint_shoulderp-min2000p < 0:  
-                
                     shoulder_2=np.where(input_hull_shoulder[midpoint_shoulderp:min2000p] == max(input_hull_shoulder[midpoint_shoulderp:min2000p]))[0][-1]+midpoint_shoulderp
                     value_2=wavelengths[shoulder_2]
                     stack_shoulder2.append(value_2)
-                
                 else:
-                
                     stack_shoulder2.append(wavelengths[midpoint_shoulderp])
+                    
                 #Calculating the right shoulder of the 2 um absorption band
                 shoulder_3=np.where(input_hull_shoulder[min2000p:74] == max(input_hull_shoulder[min2000p:74]))[0][-1]+min2000p
                 value_3=wavelengths[shoulder_3]
                 stack_shoulder3.append(value_3)
+            
     #Making the new cubes
     stack_shoulder0a=np.array(stack_shoulder0)
     stack_shoulder0b=stack_shoulder0a.astype(np.float32)
@@ -466,7 +483,11 @@ def find_minimuumslf (lf_cube,wavelengths):
                 #Finds the minimum in the fit, this reduces the noise of the final data
                 min1000plf=np.argmin(polyval_1000lf)  
                 final_1000lf=wavelengths[min1000plf+fitxplf]
-                stack_min_1000lf.append(final_1000lf)
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
+                if min_lf[min1000plf+fitxplf] >= 0.98:
+                    stack_min_1000lf.append(0)
+                else:
+                    stack_min_1000lf.append(final_1000lf)
                 #Find the minimum at 2 um
                 minimum_2000lf=np.argmin(min_lf[39:74])+39
                 min2000=minimum_2000lf+ofsetlf
@@ -479,7 +500,11 @@ def find_minimuumslf (lf_cube,wavelengths):
                 if wave_index2000 > 73: wave_index2000=73
                 if wave_index2000 < 39: wave_index2000=39
                 final_2000lf=wavelengths[wave_index2000]
-                stack_min_2000lf.append(final_2000lf)
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
+                if min_lf[wave_index2000] >= 0.98:
+                    stack_min_2000lf.append(0)
+                else:
+                    stack_min_2000lf.append(final_2000lf)
     
     
     stack_min1000lfa=np.array(stack_min_1000lf)
@@ -490,7 +515,6 @@ def find_minimuumslf (lf_cube,wavelengths):
     min_2000lf.data=stack_min2000lfa.reshape(y,z)
     return (min_1000lf,min_2000lf)
 
-#Finding the shoulders with the lienar fit method
 
 def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
     '''Find the shoulders around the minmums at 1 um and 2 um for the linear fit method. 
@@ -516,19 +540,15 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
         for b in range(lf_cube.data.shape[2]):
 
             input_shoulderlf=lf_cube.data[:,a,b]
-            if input_shoulderlf[39] == 0:
+            
+            if min_1000lf[a,b] == 0:
                 
                 stack_shoulder0lf.append(0)
-                stack_shoulder1lf.append(0)
-                stack_shoulder2lf.append(0)
                 
             else:
                 input_min1000lf=min_1000lf.data[a,b]
-                pre_input_min1000plf=np.where(wavelengths==input_min1000lf)[0]
+                pre_input_min1000plf=np.where(wavelengths==input_min1000lf)[0][0]
                 min1000plf=int(pre_input_min1000plf)
-                input_min2000lf=min_2000lf.data[a,b]
-                pre_input_min2000plf=np.where(wavelengths==input_min2000lf)[0]
-                min2000plf=int(pre_input_min2000plf)
                  # The last argument ensures than only the last value is returned
                 shoulder_0lf=np.where(input_shoulderlf[0:min1000plf] == max(input_shoulderlf[0:min1000plf]))[0][-1] 
                 ofsetlf=3
@@ -545,6 +565,19 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
                 max0plf=np.where(polyval_0lf== max(polyval_0lf))[0]  
                 final_0lf=wavelengths[max0plf+fitxp0lf]
                 stack_shoulder0lf.append(final_0lf[0])
+    for a in range(lf_cube.data.shape[1]):
+        for b in range(lf_cube.data.shape[2]):
+
+            input_shoulderlf=lf_cube.data[:,a,b]
+            if min_2000lf[a,b] == 0:
+
+                stack_shoulder1lf.append(0)
+                stack_shoulder2lf.append(0)
+                
+            else:
+                input_min2000lf=min_2000lf.data[a,b]
+                pre_input_min2000plf=np.where(wavelengths==input_min2000lf)[0][0]
+                min2000plf=int(pre_input_min2000plf)
                 #Finds the right shoulder of the 1 um absorption band (same as the left shoulder of the 2 um absorption band)
                 shoulder_1lf=np.where(input_shoulderlf[min1000plf:min2000plf+1] == max(input_shoulderlf[min1000plf:min2000plf+1]))[0][-1]+min1000plf
                 maxs1=shoulder_1lf+ofsetlf
@@ -569,4 +602,3 @@ def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
     stack_shoulder2lfa=np.array(stack_shoulder2lf)
     shoulder2lf.data=stack_shoulder2lfa.reshape(y,z)
     return (shoulder0lf, shoulder1lf, shoulder2lf)
-

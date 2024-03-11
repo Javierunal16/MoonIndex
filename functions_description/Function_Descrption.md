@@ -1,10 +1,10 @@
 # Description of MoonIndex functions
-The functions of the package are divided in four classes: Preparation, Filtration, Plotting, and indexes. Here we explain their use.  
+The functions of the package are divided in four classes: Preparation, Filtration, Plotting, and Indexes. Here we explain their use.  
 
 
 ## Preparation
 
-**MoonIndex.preparation.attach_wavelen (cube_alone,wave):** This function eliminates the two first empty bands, turn all anomalous values to nodata and attach the wavelengths. **Inputs** the M<sup>3</sup> cube, and wavelengths file.
+**MoonIndex.preparation.attach_wave (cube_alone,wave):** This function eliminates the two first empty bands, turn all anomalous values to nodata and attach the wavelengths. **Inputs** the M<sup>3</sup> cube, and wavelengths file.
 
 **MoonIndex.preparation.crop_cube (initial_cube,minnx,minny,maxx,maxy):** Crop the prepared cube to a desired location, it can be done using the unit of the coordinate system or the number of lines and columns of the file. **Inputs** are the cube, minx, miny, maxx, maxy.
 
@@ -14,7 +14,7 @@ The functions of the package are divided in four classes: Preparation, Filtratio
 
 **MoonIndex.preparation.find_minimums_ch (hull_cube,midpoint,wavelengths2):** This function finds the minimums around the 1 $\mu$m and 2 $\mu$m bands for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint, and the wavelegnths.
 
-**MoonIndex.preparation.find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):** Find the shoulders arounf the the 1 $\mu$m and 2 $\mu$m bands minimums for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint,the minimuum at 1 $\mu$m, the minimuum at 2 $\mu$m, and the wavelegnths.
+**MoonIndex.preparation.find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):** Find the shoulders around the 1 $\mu$m and 2 $\mu$m bands minimums for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint,the minimuum at 1 $\mu$m, the minimuum at 2 $\mu$m, and the wavelegnths.
 
 **MoonIndex.preparation.continuum_removal_lf (gauss_cube,wavelengths2,order1,order2):** Remove the continuum of the spectra using the convex-hull method. **Inputs** are the filtered cube, the wavelegths, the polynomial order for the band at 1 $\mu$m, and the polynomial order for the band at 2 $\mu$m.
 
@@ -22,9 +22,9 @@ The functions of the package are divided in four classes: Preparation, Filtratio
 
 **MoonIndex.preparation.find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):** Find the shoulders arounf the the 1 $\mu$m and 2 $\mu$m bands minimums for the linear fit method. **Inputs** are the continuum-removed cube,the minimuum at 1 $\mu$m, the minimuum at 2 $\mu$m, and the wavelegnths.
 
-**MoonIndex.preparation.continuum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):** Function to remve the continuum of an specific pixel at 1 $\mu$m (not intended for use of the user). **Inputs** are the filtered cube, the continuum-removed cube, the wavelengths, the x position of the pixel, the y position of the pixel.
+**MoonIndex.preparation.continuum_1000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):** Function to remove the continuum of an specific pixel at 1 $\mu$m (not intended for use of the user). **Inputs** are the filtered cube, the continuum-removed cube, the wavelengths, the x position of the pixel, the y position of the pixel.
 
-**MoonIndex.preparation.continuum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):** Function to remve the continuum of an specific pixel at 2 $\mu$m (not intended for use of the user). **Inputs** are the filtered cube, the continuum-removed cube, the wavelengths, the x position of the pixel, the y position of the pixel.
+**MoonIndex.preparation.continuum_2000 (filtered_cube,hull_cube,wavelengths,x_continum,y_continum):** Function to remove the continuum of an specific pixel at 2 $\mu$m (not intended for use of the user). **Inputs** are the filtered cube, the continuum-removed cube, the wavelengths, the x position of the pixel, the y position of the pixel.
 
 ## Filtration
 
@@ -38,9 +38,9 @@ The functions of the package are divided in four classes: Preparation, Filtratio
 
 **MoonIndex.plotting.image_plot(image_input,size2,title):** Plots a single band image with an "Spectral" colormap. **Inputs** the image, the size fo the graph, and the title.
 
-**MoonIndex.plotting.plot_comparison (cube_plot1, cube_plot2, band1, band2, title1, title2):** Plots two selected band of a cube or cubes, to compae between them. **Inputs** the first cube, the second cube,the band of the first cube, the band of the second cube, the title of the first cube, and the title of the second cube.
+**MoonIndex.plotting.plot_comparison (cube_plot1, cube_plot2, band1, band2, title1, title2):** Plots two selected band of a cube or cubes, to compare between them. **Inputs** the first cube, the second cube,the band of the first cube, the band of the second cube, the title of the first cube, and the title of the second cube.
 
-**MoonIndex.plotting.fourier_plot (gauss_filter2,band,percentage_width, percentage_high):** Plots the steps of the Fourier filter to chekc the results. **Improtant** this function is only for viewing, to change the filtering of the cube use the homonimous function under __filtration__. **Inputs** are the cube, the band to check, the width of the filter in percentange, and high of the filter in percentage.
+**MoonIndex.plotting.fourier_plot (gauss_filter2,band,percentage_width, percentage_high):** Plots the steps of the Fourier filter to check the results. **Improtant** this function is only for viewing, to change the filtering of the cube use the homonimous function under __filtration__. **Inputs** are the cube, the band to check, the width of the filter in percentange, and high of the filter in percentage.
 
 **MoonIndex.plotting.profile_plot (wavelengths,profile_singlecube,title_singleprofile, pixelx2,pixely2,roi):** Plots a single spectrum from a pixel,the spectra is averaged in a 2x2 window around the selected pixel. **Inputs** are the wavlengths, the cube, the title of the cube, the x position of the pixel to plot, and the y position of the pixel to plot. 
 
@@ -48,9 +48,9 @@ The functions of the package are divided in four classes: Preparation, Filtratio
 
 **MoonIndex.plotting.filter_comparison (cube_1,cube_2,title1,title2,band):** Plots a comparison between the cubes before and after the filtration. It also plots the ratio between the cubes, and an iamge showing the pixels that changed more than 2% in black. **Inputs** are the cube before, the cube after, the title of te first one, the title of the second one, and the band to ceck.
 
-**MoonIndex.plotting.convexhull_plot(fourier_cube, wavelengths_full,mid_point,y_hull,x_hull):** Plots the reuslt of the convex hull continuum-removal method for a pixel. **Improtant** this function is only for viewing, to change the removal use the homonimous function under __Preparation__. **Inptus** are the filtered cube, the wavelengths, the midpoint, the y position of te pixel, and the x position of the pixel.
+**MoonIndex.plotting.convexhull_plot(fourier_cube, wavelengths_full,mid_point,y_hull,x_hull):** Plots the result of the convex hull continuum-removal method for a pixel. **Improtant** this function is only for viewing, to change the removal use the homonimous function under __Preparation__. **Inptus** are the filtered cube, the wavelengths, the midpoint, the y position of te pixel, and the x position of the pixel.
 
-**MoonIndex.plotting.linearfit_plot(gauss_cube, removed_cube, wavelengths,y_plot,x_plot):** Plots the reuslt of the linear fit continuum-removal method for a pixel. **Improtant** this function is only for viewing, to change the removal use the homonimous function under __Preparation__. **Inptus** are the filtered cube, the continuum-removed cube, the y position of te pixel, and the x position of the pixel.
+**MoonIndex.plotting.linearfit_plot(gauss_cube, removed_cube, wavelengths,y_plot,x_plot):** Plots the result of the linear fit continuum-removal method for a pixel. **Improtant** this function is only for viewing, to change the removal use the homonimous function under __Preparation__. **Inptus** are the filtered cube, the continuum-removed cube, the y position of te pixel, and the x position of the pixel.
 
 ## Indexes
 

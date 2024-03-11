@@ -122,7 +122,6 @@ def fourier_plot (initial_cube,band,percentage_width, percentage_height):
     ax4 = fig.add_subplot(2,2,4)
     ax4.imshow(return_raster2.data, cmap="gray")
     ax4.title.set_text('After inverse Fourier')
-fourier_plot(M3_cube,5,60,2)
     
 
 def profiles_comparison(wavelengths,first_cube, second_cube,title1,title2, in_x, in_y,roi):
