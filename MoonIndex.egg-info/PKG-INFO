@@ -1,25 +1,12 @@
 Metadata-Version: 2.1
 Name: MoonIndex
-Version: 2.0
+Version: 2.0.1
 Author: Javier Suarez
 Author-email: jsuarezvalencia@constructor.university
 License: GPL
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
-Requires-Dist: astropy>=5.3.4
-Requires-Dist: jmespath>=1.0.1
-Requires-Dist: matplotlib>=3.8.0
-Requires-Dist: numpy>=1.26.1
-Requires-Dist: opencv-python>=4.8.1.78
-Requires-Dist: pysptools>=0.15.0
-Requires-Dist: python-dateutil>=2.8.2
-Requires-Dist: rasterio>=1.3.9
-Requires-Dist: rioxarray>=0.15.0
-Requires-Dist: scikit-learn>=1.3.2
-Requires-Dist: scipy>=1.11.3
-Requires-Dist: specutils>=1.12.0
-Requires-Dist: xarray>=2023.10.1
 
 
 

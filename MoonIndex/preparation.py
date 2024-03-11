@@ -73,7 +73,7 @@ def crop_cube_size (initial_cube,cx1,cy1,cx2,cy2):
     Outputs:
     Cropped cube.'''
     #Check input coordinates
-    if cx1 < 0 or cy1 < 0 or cx2 > initial_cube.shape[2] or cy2 > input_cube.shape[1]:
+    if cx1 < 0 or cy1 < 0 or cx2 > initial_cube.shape[2] or cy2 > initial_cube.shape[1]:
         raise ValueError("Invalid coordinate")
     M3_cubecrop=initial_cube[:,cy1:cy2,cx1:cx2]
     rect_crop=patches.Rectangle((cx1,cy1),(cx2-cx1),(cy2-cy1),linewidth=1, edgecolor='r', facecolor='none')
