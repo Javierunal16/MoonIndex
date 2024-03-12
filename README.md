@@ -9,7 +9,7 @@ MoonIndex is a python library to create spectral indexes from the Moon Mineralog
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.png)
 
 ## Requirements
-To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the procces. Moonindex requires python 3.12.
+To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the procces. Moonindex requires python 3.1o or higher.
 
 ## Instalation
 The instalation can be done via PyPI using pip:
