@@ -94,8 +94,8 @@ def indexes_total_CH(M3_cube,wavelengths):
     return(indexes_final_ch.astype(np.float32))
 
 
-def indexes_total_LF(M3_cube,wavelengths,order1,order2):
-    '''This function peforms the full procces of creating the indexes using the linear-fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+def indexes_total_SAFO(M3_cube,wavelengths,order1,order2):
+    '''This function peforms the full procces of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
@@ -104,7 +104,7 @@ def indexes_total_LF(M3_cube,wavelengths,order1,order2):
     order2 = polynomial order for the second absorption band.
     
     Outputs:
-    An image with all the indexes proccesed (LF).'''
+    An image with all the indexes proccesed (SAFO).'''
     
     #Filtration
     fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
@@ -113,7 +113,7 @@ def indexes_total_LF(M3_cube,wavelengths,order1,order2):
 
     #Continuum removal
     #Inputs are the filtered cube, wavelengths and the orders of polynomials
-    lf_cube=MoonIndex.preparation.continuum_removal_lf(gauss_cube,wavelengths,order1,order2)  
+    SAFO_cube=MoonIndex.preparation.continuum_removal_SAFO(gauss_cube,wavelengths,order1,order2)  
     #This copy the original cube to maintain coordiantes, 28 is for the total number of indexes
     indexes_total=gauss_cube[0:28,:,:].copy()
         
@@ -137,46 +137,46 @@ def indexes_total_LF(M3_cube,wavelengths,order1,order2):
     #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
     M3_spanpx=RGB_spanpx(gauss_cube)
     
-    #Creating the minimmums with the linear fit method
-    M3_min1000lf,M3_min2000lf=MoonIndex.preparation.find_minimuumslf(lf_cube,wavelengths)
-    M3_shoulder0lf,M3_shoulder1lf,M3_shoulder2lf=MoonIndex.preparation.find_shoulders_lf(lf_cube,M3_min1000lf,M3_min2000lf,wavelengths)
+    #Creating the minimmums with the second-and-first-order fit method
+    M3_min1000SAFO,M3_min2000SAFO=MoonIndex.preparation.find_minimums_SAFO(SAFO_cube,wavelengths)
+    M3_shoulder0SAFO,M3_shoulder1SAFO,M3_shoulder2SAFO=MoonIndex.preparation.find_shoulders_SAFO(SAFO_cube,M3_min1000SAFO,M3_min2000SAFO,wavelengths)
     
-    #Linear fit indexes
+    #second-and-first-order fit indexes
     #BCI, band center ar 1000 nm
-    M3_BCI_LF=band_center(M3_min1000lf)
+    M3_BCI_SAFO=band_center(M3_min1000SAFO)
     #BCII, band center ar 2000 nm
-    M3_BCII_LF=band_center(M3_min2000lf)
-    #BDI, band depth at 1000 nm with the convex hull method
-    M3_BDI_LF=band_depth(lf_cube,M3_min1000lf,wavelengths)
-    #BDII, band depth at 2000 nm with the convex hull method
-    M3_BDII_LF=band_depth(lf_cube,M3_min2000lf,wavelengths)
+    M3_BCII_SAFO=band_center(M3_min2000SAFO)
+    #BDI, band depth at 1000 nm with the second-and-first-order fit method
+    M3_BDI_SAFO=band_depth(SAFO_cube,M3_min1000SAFO,wavelengths)
+    #BDII, band depth at 2000 nm with the second-and-first-order fit method
+    M3_BDII_SAFO=band_depth(SAFO_cube,M3_min2000SAFO,wavelengths)
     #SS1000, Spectral slope between maximun right shoulder and 540nm
-    M3_SSI_LF=SSI(gauss_cube,M3_shoulder1lf,wavelengths) 
+    M3_SSI_SAFO=SSI(gauss_cube,M3_shoulder1SAFO,wavelengths) 
     #RGB8. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
-    M3_RGB8_LF=RGB8(gauss_cube,lf_cube)
+    M3_RGB8_SAFO=RGB8(gauss_cube,SAFO_cube)
     #BAI1000
-    M3_BAI1000_LF=BA(lf_cube,wavelengths,M3_shoulder0lf,M3_shoulder1lf)
+    M3_BAI1000_SAFO=BA(SAFO_cube,wavelengths,M3_shoulder0SAFO,M3_shoulder1SAFO)
     #ASY1000
-    M3_ASY1000_LF=ASY(lf_cube,wavelengths,M3_shoulder0lf, M3_shoulder1lf,M3_min1000lf)
+    M3_ASY1000_SAFO=ASY(SAFO_cube,wavelengths,M3_shoulder0SAFO, M3_shoulder1SAFO,M3_min1000SAFO)
     #BAI2000
-    M3_BAI2000_LF=BA(lf_cube,wavelengths,M3_shoulder1lf,M3_shoulder2lf)
+    M3_BAI2000_SAFO=BA(SAFO_cube,wavelengths,M3_shoulder1SAFO,M3_shoulder2SAFO)
     #ASY2000
-    M3_ASY2000_LF=ASY(lf_cube,wavelengths,M3_shoulder1lf, M3_shoulder2lf,M3_min2000lf)
+    M3_ASY2000_SAFO=ASY(SAFO_cube,wavelengths,M3_shoulder1SAFO, M3_shoulder2SAFO,M3_min2000SAFO)
     #RGB6
-    M3_RGB6_LF=RGB6(lf_cube)
+    M3_RGB6_SAFO=RGB6(SAFO_cube)
     
     #Creatinh the output cube
     
-    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_LF,M3_BCII_LF,
-                                  M3_BDI_LF,M3_BDII_LF,M3_SSI_LF,M3_RGB8_LF[0],M3_RGB8_LF[1],M3_RGB8_LF[2],M3_BAI1000_LF,M3_ASY1000_LF,M3_BAI2000_LF,M3_ASY2000_LF,M3_RGB6_LF[0],M3_RGB6_LF[1],M3_RGB6_LF[2])).transpose(2,0,1)
+    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_SAFO,M3_BCII_SAFO,
+                                  M3_BDI_SAFO,M3_BDII_SAFO,M3_SSI_SAFO,M3_RGB8_SAFO[0],M3_RGB8_SAFO[1],M3_RGB8_SAFO[2],M3_BAI1000_SAFO,M3_ASY1000_SAFO,M3_BAI2000_SAFO,M3_ASY2000_SAFO,M3_RGB6_SAFO[0],M3_RGB6_SAFO[1],M3_RGB6_SAFO[2])).transpose(2,0,1)
     
     #Give name to the bands
-    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter', 'Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm LF','Band center 2 µm LF','Band depth 1 µm LF','Band depth 2 µm LF','Spectral slope 1 µm LF','Band depth 1.9 µm LF','Integrated band depth 2 µm LF', 'Integrated band depth 1 µm LF','Band area 1 µm LF','Band assymetry 1 µm LF','Band area 2 µm LF','Band assymetry 2 µm LF','Band depth at 950 nm LF', 'Band depth at 1.05 µm LF','Band depth at 1.25 µm LF']
-    indexes_final_lf=xa.Dataset()
+    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter', 'Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm SAFO','Band center 2 µm SAFO','Band depth 1 µm SAFO','Band depth 2 µm SAFO','Spectral slope 1 µm SAFO','Band depth 1.9 µm SAFO','Integrated band depth 2 µm SAFO', 'Integrated band depth 1 µm SAFO','Band area 1 µm SAFO','Band assymetry 1 µm SAFO','Band area 2 µm SAFO','Band assymetry 2 µm SAFO','Band depth at 950 nm SAFO', 'Band depth at 1.05 µm SAFO','Band depth at 1.25 µm SAFO']
+    indexes_final_SAFO=xa.Dataset()
 
     for e in range(28):
-        indexes_final_lf[bands[e]] = indexes_total[e,:,:]
-    return(indexes_final_lf.astype(np.float32))
+        indexes_final_SAFO[bands[e]] = indexes_total[e,:,:]
+    return(indexes_final_SAFO.astype(np.float32))
 
 ###INDIVIDUAL INDEXES
 

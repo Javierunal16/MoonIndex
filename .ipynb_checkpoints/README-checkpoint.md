@@ -4,15 +4,15 @@
 
 
 # MoonIndex
-MoonIndex is a python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the litrature, some were formualted in this work. The tool uses map-projected hyperspectral cubes and common python libraries to achieve the indexes. The general procces of the tool consist of: preparation, filtration, continuum removal and creation of the indexes (Tested on Python 3.11).
+MoonIndex is a Python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the literature, some were formulated in this work. The tool uses map-projected hyperspectral cubes and common Python libraries to achieve the indexes. The general process of the tool consists of: preparation, filtration, continuum removal, and creation of the indexes (Tested on Python 3.11).
 
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.png)
 
 ## Requirements
-To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the procces. Moonindex requires python 3.1o or higher.
+To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the process. Moonindex requires Python 3.10 or higher.
 
-## Instalation
-The instalation can be done via PyPI using pip:
+## Installation
+The installation can be done via PyPI using pip:
 
 `pip install MoonIndex`
 
@@ -21,9 +21,9 @@ Or after downloading the MoonIndex-1.0.tar.gz file under dist:
 `pip install MoonIndex-1.0.tar.gz`
 
 ## Example
-The notebook called M3_Indexes.ipynb under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes, since the process is intensive. The sample cube used in this notebook can be found at: https://zenodo.org/records/10014564
+The notebook called M3_Indexes.ipynb under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes since the process is intensive. The sample cube used in this notebook can be found at: https://zenodo.org/records/10014564
 
-## Straighforwad proccesing
+## Straighforward processing
 
 First import the cube and the Wavelegnths.txt file using rioxarray and numpy:
 
@@ -74,7 +74,7 @@ Or:
 | Band depth at 950 nm                | BD950       | Parameter     | Besse et al. (2011)        |
 | Band depth at 1.05 µm               | BD1050      | Parameter     | Besse et al. (2011)        |
 | Band depth at 1.25 µm               | BD1250      | Parameter     | Besse et al. (2011)        |
-| Reflectnace at 1.58 µm              | R1580       | Parameter     | Besse et al. (2011)        |
+| Reflectance at 1.58 µm              | R1580       | Parameter     | Besse et al. (2011)        |
 | Iron oxide parameter                | Fe          | Parameter     | Wu et al. (2012)           |
 | Titanium parameter                  | Ti          | Parameter     | Wu et al. (2012)           |
 | Chromite parameter                  | Cr          | Parameter     | This paper                 |
