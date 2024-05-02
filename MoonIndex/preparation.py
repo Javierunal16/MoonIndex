@@ -240,8 +240,8 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
                 #Finds the minimum in the fit, this reduce the noise of the final data
                 min1000p=np.where(polyval_1000== min(polyval_1000))[0]  
                 final_1000=wavelengths[min1000p+fitxp]
-                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if input_hull[min1000p+fitxp][0] >= 0.98:
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.02
+                if input_hull[min1000p+fitxp][0] >= 0.974:
                     stack_min1000.append(0)
                 else:
                     stack_min1000.append(final_1000[0])
@@ -253,7 +253,7 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
                 min2000p=np.where(polyval_2000== min(polyval_2000))[0]
                 final_2000=wavelengths[min2000p+minimum_2000-ofset]
                 #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if input_hull[min2000p+minimum_2000-ofset][0] >= 0.98:
+                if input_hull[min2000p+minimum_2000-ofset][0] >= 0.983:
                     stack_min2000.append(0)
                 else:
                     stack_min2000.append(final_2000[0])
