@@ -288,7 +288,7 @@ def convexhull_plot(filtered_cube, wavelengths_full,mid_point,y_hull,x_hull):
 
 #second-and-first-order fit fit method
 def safofit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):    
-    '''Plots the reuslt of the second-and-first-order fit continuum-removal method for a pixel. The limits for the fits are manually defined using values established in the literature. This function is only for viewing, to perform the removal use the homonimous function under Preparation. 
+    '''Plots the result of the second-and-first-order fit continuum-removal method for a pixel. The limits for the fits are manually defined using values established in the literature. This function is only for viewing, to perform the removal use the homonimous function under Preparation. 
     
     Inptus:
     filtered_cube = the filtered cube,

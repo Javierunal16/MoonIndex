@@ -7,7 +7,7 @@ import scipy as sp
 ###DATA PRETARION
 
 def attach_wave (initial_cube,wavelengths):
-    '''This function eliminates the first two empty bands, turn all anomalous values to nodata, and attach the wavelengths. 
+    '''This function eliminates the first two empty bands, turn all anomalous values to no data, and attach the wavelengths. 
     
     Inputs:
     initial_cube = M3 cube, 
@@ -194,7 +194,7 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
     Inputs:
     hull_cube = continuum-removed cube (CH),
     midpoint = tie-point,
-    wavelengths = wavelegnths.
+    wavelengths = wavelengths.
     
     Outputs:
     Minimum at 1 um and minimum at 2 um cubes.'''
@@ -240,8 +240,8 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
                 #Finds the minimum in the fit, this reduce the noise of the final data
                 min1000p=np.where(polyval_1000== min(polyval_1000))[0]  
                 final_1000=wavelengths[min1000p+fitxp]
-                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if input_hull[min1000p+fitxp][0] >= 0.98:
+                #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.02
+                if input_hull[min1000p+fitxp][0] >= 0.974:
                     stack_min1000.append(0)
                 else:
                     stack_min1000.append(final_1000[0])
@@ -253,7 +253,7 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
                 min2000p=np.where(polyval_2000== min(polyval_2000))[0]
                 final_2000=wavelengths[min2000p+minimum_2000-ofset]
                 #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if input_hull[min2000p+minimum_2000-ofset][0] >= 0.98:
+                if input_hull[min2000p+minimum_2000-ofset][0] >= 0.983:
                     stack_min2000.append(0)
                 else:
                     stack_min2000.append(final_2000[0])
@@ -271,14 +271,14 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
 
 
 def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
-    '''Find the shoulders around the minmums at 1 um and 2 um for the convex hull method. 
+    '''Find the shoulders around the minimums at 1 um and 2 um for the convex hull method. 
     
     Inputs:
     hull_cube = continuum removed cube (CH),
     midpoint = tie-point,
     min_1000 = the minimuum at 1 um cube, 
     min_2000 = the minimuum at 2 um cube,
-    wavelengths3 = wavelegnths.
+    wavelengths3 = wavelengths.
     
     Outputs:
     Left and right shoulders of the 1 um absorption band, left and right shoulder of the 2 um absorption band.'''
@@ -383,10 +383,10 @@ def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
     
     return (shoulder0, shoulder1, shoulder2, shoulder3)
 
-##Linear fit method
+##second-and-first-order fit
 
-def continuum_removal_lf (filtered_cube,wavelengths,order1,order2):
-    '''Remove the continuum of the spectra using the linear-fit method. The limits for the fits are manually defined using values established in the literature.
+def continuum_removal_SAFO (filtered_cube,wavelengths,order1,order2):
+    '''Remove the continuum of the spectra using the second-and-first-order fit method. The limits for the fits are manually defined using values established in the literature.
     
     Inputs:
     filtered_cube = fitlered cube, 
@@ -395,206 +395,206 @@ def continuum_removal_lf (filtered_cube,wavelengths,order1,order2):
     order2 = polynomial order for the second absoprtion band.
         
     Outputs:
-    Continuum removed cube by linear fit(LF).'''
+    Continuum removed cube by second-and-first-order fit (SAFO).'''
     
-    lf=filtered_cube[0:74,:,:].copy()
-    stack_lf=[]
-    x,y,z=lf[:,:,:].shape
+    SAFO=filtered_cube[0:74,:,:].copy()
+    stack_SAFO=[]
+    x,y,z=SAFO[:,:,:].shape
     wavelengths=wavelengths[0:74]
     
     for a in range(filtered_cube.data.shape[1]):
         for b in range(filtered_cube.data.shape[2]):
             #Second order fit for 1000 nm, it used a range for the two shoudlers around the 1000 nm absorption
-            lf_cube=filtered_cube.data[0:74,a,b]  
+            SAFO_cube=filtered_cube.data[0:74,a,b]  
             
-            if lf_cube[39] == 0: 
-                stack_lf.append(np.zeros(74))
+            if SAFO_cube[39] == 0: 
+                stack_SAFO.append(np.zeros(74))
             else:
                 #The limits of the fit are defined manually by values used in the literature
                 fitx10001=wavelengths[1:7]
                 fitx10002=wavelengths[39:42]
                 fitx1000=np.hstack((fitx10001,fitx10002))
-                fity10001=lf_cube[1:7]
-                fity10002=lf_cube[39:42]
+                fity10001=SAFO_cube[1:7]
+                fity10002=SAFO_cube[39:42]
                 fity1000=np.hstack((fity10001,fity10002))
                 fit1000=np.polyfit(fitx1000,fity1000,order1)
                 polival1000=np.polyval(fit1000,wavelengths[0:42])
                 #Fit for 2000 nm, linear
                 fitx2000=np.hstack((fitx10002,wavelengths[73])) 
-                fity2000=np.hstack((fity10002,lf_cube[73]))
+                fity2000=np.hstack((fity10002,SAFO_cube[73]))
                 fit2000=np.polyfit(fitx2000,fity2000,order2)
                 polival2000=np.polyval(fit2000,wavelengths[42:74])
                 #Continuum removal by dividing
                 continuum=np.hstack((polival1000,polival2000))  
-                continuum_removed=lf_cube/continuum
+                continuum_removed=SAFO_cube/continuum
                 continuum_removed[continuum_removed > 1]= 1
-                stack_lf.append(continuum_removed)
+                stack_SAFO.append(continuum_removed)
             
-    stack_lfa=np.array(stack_lf)
-    lf.data=stack_lfa.reshape(y,z,x).transpose(2,0,1)
+    stack_SAFOa=np.array(stack_SAFO)
+    SAFO.data=stack_SAFOa.reshape(y,z,x).transpose(2,0,1)
     
-    return(lf)
+    return(SAFO)
 
 
-def find_minimuumslf (lf_cube,wavelengths):
-    '''This function finds the minimums around the 1 um and 2 um bands for the linear fit method. 
+def find_minimums_SAFO (SAFO_cube,wavelengths):
+    '''This function finds the minimums around the 1 um and 2 um bands for the second-and-first-order fit method. 
     
     Inputs:
-    lf_cube = continuum-removed cube (LF),
-    wavelengths = wavelegnths.
+    SAFO_cube = continuum-removed cube (SAFO),
+    wavelengths = wavelengths.
     
     Outputs:
     Minimum at 1 um and minimum at 2 um cubes.'''
 
     #Copied from the original to maintain the projection
-    min_1000lf=lf_cube[0,:,:].copy()  
-    stack_min_1000lf=[]
-    min_2000lf=lf_cube[0,:,:].copy()
-    stack_min_2000lf=[]
-    y,z=lf_cube[0,:,:].shape
+    min_1000SAFO=SAFO_cube[0,:,:].copy()  
+    stack_min_1000SAFO=[]
+    min_2000SAFO=SAFO_cube[0,:,:].copy()
+    stack_min_2000SAFO=[]
+    y,z=SAFO_cube[0,:,:].shape
 
-    for a in range(lf_cube.data.shape[1]):
-        for b in range(lf_cube.data.shape[2]):
+    for a in range(SAFO_cube.data.shape[1]):
+        for b in range(SAFO_cube.data.shape[2]):
         
-            min_lf=lf_cube.data[:,a,b]
+            min_SAFO=SAFO_cube.data[:,a,b]
             
-            if min_lf[39] == 0:
+            if min_SAFO[39] == 0:
                 
-                stack_min_1000lf.append(0)
-                stack_min_2000lf.append(0)
+                stack_min_1000SAFO.append(0)
+                stack_min_2000SAFO.append(0)
                 
             else:
                 #Finds the minimum value of the reflectance in wavelengths, the limit is defined by the midpoint
-                minimum_1000lf=np.argmin(min_lf[7:39])+7    
-                ofsetlf=5
+                minimum_1000SAFO=np.argmin(min_SAFO[7:39])+7    
+                ofsetSAFO=5
                 #This creates a window around the minimum in the convex hull to do a posterior fit
-                fitxplf=minimum_1000lf-ofsetlf  
-                fitxp2lf=np.array(minimum_1000lf+ofsetlf)
-                fitxp2lf[fitxp2lf > 39]= 38
-                fitxlf=wavelengths[int(fitxplf):int(fitxp2lf)]
-                fitylf=min_lf[int(fitxplf):int(fitxp2lf)]
+                fitxpSAFO=minimum_1000SAFO-ofsetSAFO  
+                fitxp2SAFO=np.array(minimum_1000SAFO+ofsetSAFO)
+                fitxp2SAFO[fitxp2SAFO > 39]= 38
+                fitxSAFO=wavelengths[int(fitxpSAFO):int(fitxp2SAFO)]
+                fitySAFO=min_SAFO[int(fitxpSAFO):int(fitxp2SAFO)]
                 #Creates a second order fit around the 1 um minimum
-                fit_1000lf=np.polyfit(fitxlf,fitylf,2)  
-                polyval_1000lf=np.polyval(fit_1000lf,wavelengths[int(fitxplf):int(fitxp2lf)])
+                fit_1000SAFO=np.polyfit(fitxSAFO,fitySAFO,2)  
+                polyval_1000SAFO=np.polyval(fit_1000SAFO,wavelengths[int(fitxpSAFO):int(fitxp2SAFO)])
                 #Finds the minimum in the fit, this reduces the noise of the final data
-                min1000plf=np.argmin(polyval_1000lf)  
-                final_1000lf=wavelengths[min1000plf+fitxplf]
+                min1000pSAFO=np.argmin(polyval_1000SAFO)  
+                final_1000SAFO=wavelengths[min1000pSAFO+fitxpSAFO]
                 #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if min_lf[min1000plf+fitxplf] >= 0.98:
-                    stack_min_1000lf.append(0)
+                if min_SAFO[min1000pSAFO+fitxpSAFO] >= 0.98:
+                    stack_min_1000SAFO.append(0)
                 else:
-                    stack_min_1000lf.append(final_1000lf)
+                    stack_min_1000SAFO.append(final_1000SAFO)
                 #Find the minimum at 2 um
-                minimum_2000lf=np.argmin(min_lf[39:74])+39
-                min2000=minimum_2000lf+ofsetlf
+                minimum_2000SAFO=np.argmin(min_SAFO[39:74])+39
+                min2000=minimum_2000SAFO+ofsetSAFO
                 if min2000 > 73: min2000=73
-                fit_2000lf=np.polyfit(wavelengths[int(minimum_2000lf-ofsetlf):int(min2000)],min_lf[int(minimum_2000lf-ofsetlf):int(min2000)],2)
-                polyval_2000lf=np.polyval(fit_2000lf,wavelengths[int(minimum_2000lf-ofsetlf):int(minimum_2000lf+ofsetlf+1)])
-                min2000plf=np.argmin(polyval_2000lf)
-                wave_index2000=min2000plf+minimum_2000lf-ofsetlf
+                fit_2000SAFO=np.polyfit(wavelengths[int(minimum_2000SAFO-ofsetSAFO):int(min2000)],min_SAFO[int(minimum_2000SAFO-ofsetSAFO):int(min2000)],2)
+                polyval_2000SAFO=np.polyval(fit_2000SAFO,wavelengths[int(minimum_2000SAFO-ofsetSAFO):int(minimum_2000SAFO+ofsetSAFO+1)])
+                min2000pSAFO=np.argmin(polyval_2000SAFO)
+                wave_index2000=min2000pSAFO+minimum_2000SAFO-ofsetSAFO
                 #Limits the calculations to the values on the literature
                 if wave_index2000 > 73: wave_index2000=73
                 if wave_index2000 < 39: wave_index2000=39
-                final_2000lf=wavelengths[wave_index2000]
+                final_2000SAFO=wavelengths[wave_index2000]
                 #Avoid the calculation of the band center if the band depth is smaller than the treshold value 0.015
-                if min_lf[wave_index2000] >= 0.98:
-                    stack_min_2000lf.append(0)
+                if min_SAFO[wave_index2000] >= 0.98:
+                    stack_min_2000SAFO.append(0)
                 else:
-                    stack_min_2000lf.append(final_2000lf)
+                    stack_min_2000SAFO.append(final_2000SAFO)
     
     
-    stack_min1000lfa=np.array(stack_min_1000lf)
-    stack_min1000lfa[stack_min1000lfa ==  wavelengths[0]]= wavelengths[18]
-    min_1000lf.data=stack_min1000lfa.reshape(y,z)
+    stack_min1000SAFOa=np.array(stack_min_1000SAFO)
+    stack_min1000SAFOa[stack_min1000SAFOa ==  wavelengths[0]]= wavelengths[18]
+    min_1000SAFO.data=stack_min1000SAFOa.reshape(y,z)
 
-    stack_min2000lfa=np.array(stack_min_2000lf)
-    min_2000lf.data=stack_min2000lfa.reshape(y,z)
-    return (min_1000lf,min_2000lf)
+    stack_min2000SAFOa=np.array(stack_min_2000SAFO)
+    min_2000SAFO.data=stack_min2000SAFOa.reshape(y,z)
+    return (min_1000SAFO,min_2000SAFO)
 
 
-def find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):
-    '''Find the shoulders around the minmums at 1 um and 2 um for the linear fit method. 
+def find_shoulders_SAFO (SAFO_cube,min_1000SAFO,min_2000SAFO, wavelengths):
+    '''Find the shoulders around the minimums at 1 um and 2 um for the second-and-first-order fit method. 
     
     Inputs:
-    lf_cube = continuum removed cube (lf),
-    min_1000lf = the minimuum at 1 um cube, 
-    min_2000lf = the minimuum at 2 um cube,
-    wavelengths = wavelegnths.
+    SAFO_cube = continuum removed cube (SAFO),
+    min_1000SAFO = the minimuum at 1 um cube, 
+    min_2000SAFO = the minimuum at 2 um cube,
+    wavelengths = wavelengths.
     
     Outputs:
     Left and right shoulders of the 1 um absorption band, left and right shoulder of the 2 um absorption band (the rigth shoulder of the 1 um is the same as the left shoulder of the 2 um absorption band).'''
     
-    shoulder0lf=lf_cube[0,:,:].copy()
-    stack_shoulder0lf=[]
-    shoulder1lf=lf_cube[0,:,:].copy()
-    stack_shoulder1lf=[]
-    shoulder2lf=lf_cube[0,:,:].copy()
-    stack_shoulder2lf=[]
-    y,z=lf_cube[0,:,:].shape
+    shoulder0SAFO=SAFO_cube[0,:,:].copy()
+    stack_shoulder0SAFO=[]
+    shoulder1SAFO=SAFO_cube[0,:,:].copy()
+    stack_shoulder1SAFO=[]
+    shoulder2SAFO=SAFO_cube[0,:,:].copy()
+    stack_shoulder2SAFO=[]
+    y,z=SAFO_cube[0,:,:].shape
 
-    for a in range(lf_cube.data.shape[1]):
-        for b in range(lf_cube.data.shape[2]):
+    for a in range(SAFO_cube.data.shape[1]):
+        for b in range(SAFO_cube.data.shape[2]):
 
-            input_shoulderlf=lf_cube.data[:,a,b]
+            input_shoulderSAFO=SAFO_cube.data[:,a,b]
             
-            if min_1000lf[a,b] == 0:
+            if min_1000SAFO[a,b] == 0:
                 
-                stack_shoulder0lf.append(0)
+                stack_shoulder0SAFO.append(0)
                 
             else:
-                input_min1000lf=min_1000lf.data[a,b]
-                pre_input_min1000plf=np.where(wavelengths==input_min1000lf)[0][0]
-                min1000plf=int(pre_input_min1000plf)
+                input_min1000SAFO=min_1000SAFO.data[a,b]
+                pre_input_min1000pSAFO=np.where(wavelengths==input_min1000SAFO)[0][0]
+                min1000pSAFO=int(pre_input_min1000pSAFO)
                  # The last argument ensures than only the last value is returned
-                shoulder_0lf=np.where(input_shoulderlf[0:min1000plf] == max(input_shoulderlf[0:min1000plf]))[0][-1] 
-                ofsetlf=3
+                shoulder_0SAFO=np.where(input_shoulderSAFO[0:min1000pSAFO] == max(input_shoulderSAFO[0:min1000pSAFO]))[0][-1] 
+                ofsetSAFO=3
                  #This creates a window around the maximum in the convex hull to do a posterior fit
-                fitxp0lf=shoulder_0lf-ofsetlf 
+                fitxp0SAFO=shoulder_0SAFO-ofsetSAFO 
                 #If the value is minor to 0, it converts it to 0
-                fitxp0lf=max(0, fitxp0lf) 
-                fitx0lf=wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
-                fity0lf=input_shoulderlf[int(fitxp0lf):int(shoulder_0lf+ofsetlf)]
+                fitxp0SAFO=max(0, fitxp0SAFO) 
+                fitx0SAFO=wavelengths[int(fitxp0SAFO):int(shoulder_0SAFO+ofsetSAFO)]
+                fity0SAFO=input_shoulderSAFO[int(fitxp0SAFO):int(shoulder_0SAFO+ofsetSAFO)]
                 #Creates a second order fit aroud the maximums
-                fit_0lf=np.polyfit(fitx0lf,fity0lf,2)  
-                polyval_0lf=np.polyval(fit_0lf,wavelengths[int(fitxp0lf):int(shoulder_0lf+ofsetlf+1)])
+                fit_0SAFO=np.polyfit(fitx0SAFO,fity0SAFO,2)  
+                polyval_0SAFO=np.polyval(fit_0SAFO,wavelengths[int(fitxp0SAFO):int(shoulder_0SAFO+ofsetSAFO+1)])
                 #Finds the maximum in the fit, this reduce the noise of the final data
-                max0plf=np.where(polyval_0lf== max(polyval_0lf))[0]  
-                final_0lf=wavelengths[max0plf+fitxp0lf]
-                stack_shoulder0lf.append(final_0lf[0])
-    for a in range(lf_cube.data.shape[1]):
-        for b in range(lf_cube.data.shape[2]):
+                max0pSAFO=np.where(polyval_0SAFO== max(polyval_0SAFO))[0]  
+                final_0SAFO=wavelengths[max0pSAFO+fitxp0SAFO]
+                stack_shoulder0SAFO.append(final_0SAFO[0])
+    for a in range(SAFO_cube.data.shape[1]):
+        for b in range(SAFO_cube.data.shape[2]):
 
-            input_shoulderlf=lf_cube.data[:,a,b]
-            if min_2000lf[a,b] == 0:
+            input_shoulderSAFO=SAFO_cube.data[:,a,b]
+            if min_2000SAFO[a,b] == 0:
 
-                stack_shoulder1lf.append(0)
-                stack_shoulder2lf.append(0)
+                stack_shoulder1SAFO.append(0)
+                stack_shoulder2SAFO.append(0)
                 
             else:
-                input_min2000lf=min_2000lf.data[a,b]
-                pre_input_min2000plf=np.where(wavelengths==input_min2000lf)[0][0]
-                min2000plf=int(pre_input_min2000plf)
+                input_min2000SAFO=min_2000SAFO.data[a,b]
+                pre_input_min2000pSAFO=np.where(wavelengths==input_min2000SAFO)[0][0]
+                min2000pSAFO=int(pre_input_min2000pSAFO)
                 #Finds the right shoulder of the 1 um absorption band (same as the left shoulder of the 2 um absorption band)
-                shoulder_1lf=np.where(input_shoulderlf[min1000plf:min2000plf+1] == max(input_shoulderlf[min1000plf:min2000plf+1]))[0][-1]+min1000plf
-                maxs1=shoulder_1lf+ofsetlf
+                shoulder_1SAFO=np.where(input_shoulderSAFO[min1000pSAFO:min2000pSAFO+1] == max(input_shoulderSAFO[min1000pSAFO:min2000pSAFO+1]))[0][-1]+min1000pSAFO
+                maxs1=shoulder_1SAFO+ofsetSAFO
                 if maxs1 > 74: maxs1=74
-                fitxp1lf=shoulder_1lf-ofsetlf
-                fitxp1lf=max(0,fitxp1lf)
-                fit_1lf=np.polyfit(wavelengths[int(fitxp1lf):int(maxs1)],input_shoulderlf[int(fitxp1lf):int(maxs1)],2)
-                polyval_1lf=np.polyval(fit_1lf,wavelengths[int(fitxp1lf):int(shoulder_1lf+ofsetlf+1)])
-                max1plf=np.where(polyval_1lf== max(polyval_1lf))[0]
-                final_1lf=wavelengths[max1plf+fitxp1lf]
-                stack_shoulder1lf.append(final_1lf[0])
+                fitxp1SAFO=shoulder_1SAFO-ofsetSAFO
+                fitxp1SAFO=max(0,fitxp1SAFO)
+                fit_1SAFO=np.polyfit(wavelengths[int(fitxp1SAFO):int(maxs1)],input_shoulderSAFO[int(fitxp1SAFO):int(maxs1)],2)
+                polyval_1SAFO=np.polyval(fit_1SAFO,wavelengths[int(fitxp1SAFO):int(shoulder_1SAFO+ofsetSAFO+1)])
+                max1pSAFO=np.where(polyval_1SAFO== max(polyval_1SAFO))[0]
+                final_1SAFO=wavelengths[max1pSAFO+fitxp1SAFO]
+                stack_shoulder1SAFO.append(final_1SAFO[0])
                 #The right shoulder of the 2 um absorption band is the last band
                 value_2=wavelengths[74]
-                stack_shoulder2lf.append(value_2)
+                stack_shoulder2SAFO.append(value_2)
 
-    stack_shoulder0lfa=np.array(stack_shoulder0lf)
-    shoulder0lf.data=stack_shoulder0lfa.reshape(y,z)
+    stack_shoulder0SAFOa=np.array(stack_shoulder0SAFO)
+    shoulder0SAFO.data=stack_shoulder0SAFOa.reshape(y,z)
 
-    stack_shoulder1lfa=np.array( stack_shoulder1lf)
-    shoulder1lf.data=stack_shoulder1lfa.reshape(y,z)
+    stack_shoulder1SAFOa=np.array( stack_shoulder1SAFO)
+    shoulder1SAFO.data=stack_shoulder1SAFOa.reshape(y,z)
 
-    stack_shoulder2lfa=np.array(stack_shoulder2lf)
-    shoulder2lf.data=stack_shoulder2lfa.reshape(y,z)
-    return (shoulder0lf, shoulder1lf, shoulder2lf)
+    stack_shoulder2SAFOa=np.array(stack_shoulder2SAFO)
+    shoulder2SAFO.data=stack_shoulder2SAFOa.reshape(y,z)
+    return (shoulder0SAFO, shoulder1SAFO, shoulder2SAFO)

@@ -4,7 +4,7 @@
 
 
 # MoonIndex
-MoonIndex is a Python library to create spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the literature, some were formulated in this work. The tool uses map-projected hyperspectral cubes and common Python libraries to achieve the indexes. The general process of the tool consists of: preparation, filtration, continuum removal, and creation of the indexes (Tested on Python 3.11).
+MoonIndex is a Python library that creates spectral indexes from the Moon Mineralogy Mapper (M<sup>3</sup>). The majority of indexes were collected from the literature, some were formulated in this work. The tool uses map-projected hyperspectral cubes and common Python libraries to generate the indexes. The general process of the tool consists of: preparation, filtration, continuum removal, and creation of the indexes (Tested on Python 3.11).
 
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.jpeg)
 
@@ -16,12 +16,12 @@ The installation can be done via PyPI using pip:
 
 `pip install MoonIndex`
 
-Or after downloading the MoonIndex-1.0.tar.gz file under dist:
+Or after downloading the MoonIndex-2.0.2.tar.gz file under dist:
 
-`pip install MoonIndex-1.0.tar.gz`
+`pip install MoonIndex-2.0.2.tar.gz`
 
 ## Example
-The notebook called M3_Indexes.ipynb under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes since the process is intensive. The sample cube used in this notebook can be found at: https://zenodo.org/records/10014564
+The notebooks under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes since the process is intensive. The sample cube used in these notebook can be found at: https://zenodo.org/records/10810407
 
 ## Straighforward processing
 
@@ -33,7 +33,7 @@ First import the cube and the Wavelegnths.txt file using rioxarray and numpy:
 
 Then a function to prepare the data:
 
-`M3_cube=MoonIndex.preparation.attach_wavelen(input_cube,wavelengths)`
+`M3_cube=MoonIndex.preparation.attach_wave(input_cube,wavelengths)`
 
 If you desire to crop the cube, you can use:
 

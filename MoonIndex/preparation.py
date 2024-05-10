@@ -7,7 +7,7 @@ import scipy as sp
 ###DATA PRETARION
 
 def attach_wave (initial_cube,wavelengths):
-    '''This function eliminates the first two empty bands, turn all anomalous values to nodata, and attach the wavelengths. 
+    '''This function eliminates the first two empty bands, turn all anomalous values to no data, and attach the wavelengths. 
     
     Inputs:
     initial_cube = M3 cube, 
@@ -194,7 +194,7 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
     Inputs:
     hull_cube = continuum-removed cube (CH),
     midpoint = tie-point,
-    wavelengths = wavelegnths.
+    wavelengths = wavelengths.
     
     Outputs:
     Minimum at 1 um and minimum at 2 um cubes.'''
@@ -271,14 +271,14 @@ def find_minimums_ch (hull_cube,midpoint,wavelengths):
 
 
 def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
-    '''Find the shoulders around the minmums at 1 um and 2 um for the convex hull method. 
+    '''Find the shoulders around the minimums at 1 um and 2 um for the convex hull method. 
     
     Inputs:
     hull_cube = continuum removed cube (CH),
     midpoint = tie-point,
     min_1000 = the minimuum at 1 um cube, 
     min_2000 = the minimuum at 2 um cube,
-    wavelengths3 = wavelegnths.
+    wavelengths3 = wavelengths.
     
     Outputs:
     Left and right shoulders of the 1 um absorption band, left and right shoulder of the 2 um absorption band.'''
@@ -441,7 +441,7 @@ def find_minimums_SAFO (SAFO_cube,wavelengths):
     
     Inputs:
     SAFO_cube = continuum-removed cube (SAFO),
-    wavelengths = wavelegnths.
+    wavelengths = wavelengths.
     
     Outputs:
     Minimum at 1 um and minimum at 2 um cubes.'''
@@ -513,13 +513,13 @@ def find_minimums_SAFO (SAFO_cube,wavelengths):
 
 
 def find_shoulders_SAFO (SAFO_cube,min_1000SAFO,min_2000SAFO, wavelengths):
-    '''Find the shoulders around the minmums at 1 um and 2 um for the second-and-first-order fit method. 
+    '''Find the shoulders around the minimums at 1 um and 2 um for the second-and-first-order fit method. 
     
     Inputs:
     SAFO_cube = continuum removed cube (SAFO),
     min_1000SAFO = the minimuum at 1 um cube, 
     min_2000SAFO = the minimuum at 2 um cube,
-    wavelengths = wavelegnths.
+    wavelengths = wavelengths.
     
     Outputs:
     Left and right shoulders of the 1 um absorption band, left and right shoulder of the 2 um absorption band (the rigth shoulder of the 1 um is the same as the left shoulder of the 2 um absorption band).'''

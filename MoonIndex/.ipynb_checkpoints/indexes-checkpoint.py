@@ -7,7 +7,7 @@ import xarray as xa
 ###CALCULATING ALL THE INDEXES
 
 def indexes_total_CH(M3_cube,wavelengths):
-    '''This function peforms the full procces of creating the indexes using the convex-hull removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+    '''This function performs the full process of creating the indexes using the convex-hull removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
@@ -95,7 +95,7 @@ def indexes_total_CH(M3_cube,wavelengths):
 
 
 def indexes_total_SAFO(M3_cube,wavelengths,order1,order2):
-    '''This function peforms the full procces of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+    '''This function performs the full process of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
@@ -316,7 +316,7 @@ def RGB_spanpx (gauss_cube):
 
 
 def band_center (minimum):
-    '''Creates the band minimuum, it works for both absorption bands by changing the corresponding inputs. 
+    '''Creates the band minimum, it works for both absorption bands by changing the corresponding inputs. 
     
     Input: 
     minimum = the minimum image.
@@ -336,10 +336,10 @@ def band_depth (removed_cube,minimum,wavelengths):
     Inputs:
     removed_cube = continuum-removed cube,
     minimum = the minimum image,
-    wavelengths = the wavelegnths.
+    wavelengths = the wavelengths.
     
     Output:
-    The band depth of the selected abosprtion band.'''
+    The band depth of the selected absorption band.'''
 
     #Copying the cube to save the results
     cube_depth=removed_cube[0,:,:].copy()  
@@ -370,11 +370,11 @@ def band_depth (removed_cube,minimum,wavelengths):
 
 
 def SSI (gauss_cube,shoulder1, wavelengths):
-    '''Creates the sprectral slope at 1 um index. This is done between the 540 nm band and the left shoudler of the 1 um band.
+    '''Creates the sprectral slope at 1 um index. This is done between the 540 nm band and the left shoulder of the 1 um band.
     
     Inputs: 
     gauss_cube = the filtered cube, 
-    shoulder1 = the right shoudler of the 1 um band,
+    shoulder1 = the right shoulder of the 1 um band,
     wavelengths = the wavelengths.
     
     Output:
@@ -414,7 +414,7 @@ def RGB1 (gauss_cube,SSI_cube,BDI_cube,BDII_cube):
     BDII_cube = the band depth at 2 um.
     
     Output:
-    The RGB1 RGB composite.'''
+    The RGB1 composite.'''
     
     RGB1=gauss_cube[0:3,:,:].copy()
     RGB1.data=np.dstack((SSI_cube,BDI_cube,BDII_cube)).transpose(2,0,1)
@@ -431,7 +431,7 @@ def RGB2 (gauss_cube,SSI_cube, R540_cube, BCII_cube):
     BCII_cube = the band center at 2 um.
     
     Output:
-    The RGB2 RGB composite.'''
+    The RGB2 composite.'''
     
     RGB2=gauss_cube[0:3,:,:].copy()
     RGB2.data=np.dstack((SSI_cube,R540_cube,BCII_cube)).transpose(2,0,1)
@@ -448,7 +448,7 @@ def RGB3 (gauss_cube,SSI_cube,R540_cube,BCI_cube):
     BCI_cube = the band center at 1 um.
     
     Output:
-    The RGB3 RGB composite.'''
+    The RGB3 composite.'''
     
     RGB3=gauss_cube[0:3,:,:].copy()
     RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
@@ -462,7 +462,7 @@ def RGB6 (removed_cube):
     removed_cube = the continuum-removed cube.
     
     Output:
-    The RGB6 RGB composite.'''
+    The RGB6 composite.'''
     
     RGB6=removed_cube[0:3,:,:].copy()
     RGB6_R=1-removed_cube.data[16,:,:]
@@ -478,12 +478,12 @@ def RGB7 (gauss_cube,R1580,IBD1000,IBD2000):
     
     Inputs:
     gauss_cube = the filtered cube.
-    R1580 = the reflecance at 1580,
+    R1580 = the reflectance at 1580,
     IBD1000 = the integrated band depth at 1 um,
     IBD2000 = the integrated band depth at 2 um.
     
     Output:
-    The RGB7 RGB composite.'''
+    The RGB7 composite.'''
     
     RGB7=gauss_cube[0:3,:,:].copy()
     RGB7.data=np.dstack((R1580,IBD1000,IBD2000)).transpose(2,0,1)
@@ -497,7 +497,7 @@ def BA (removed_cube,wavelengths,shoulder0,shoulder1):
     removed_cube = the continuum-removed cube,
     wavelengths = the wavelengths,
     shoulder0 = the left shoulder of the band, 
-    shoulder1 = the right shoudler of the band.
+    shoulder1 = the right shoulder of the band.
     
     Output:
     The band area of the selected absorption band.'''
@@ -547,12 +547,12 @@ def RGB4 (gauss_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000):
     gauss_cube = the filtered cube,
     wavelengths = the wavelengths,
     shoulder0 = the left shoulder of the band, 
-    shoulder1 = the right shoudler of the band,
+    shoulder1 = the right shoulder of the band,
     minimum_1000 = the band minimum at 1 um,
     minimum_2000 = the band minimum at 2 um.
     
     Output:
-    The RGB4 RGB composite.'''
+    The RGB4 composite.'''
     
     y,z=gauss_cube[0,:,:].shape
     #Finding the spectral resolution, neccesary to find the area
@@ -604,7 +604,7 @@ def ASY (removed_cube,wavelengths,shoulder0,shoulder1,min1000):
     removed_cube = the continuum-removed cube,
     wavelengths = the wavelengths,
     shoulder0 = the left shoudler of the band, 
-    shoulder1 = the right shoudler of the band, 
+    shoulder1 = the right shoulder of the band, 
     min1000 = the minimum of the selected band.
     
     Output:
@@ -690,7 +690,7 @@ def RGB5 (gauss_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
     gauss_cube = the filtered cube.
     wavelengths = the wavelengths,
     shoulder0 = the left shoudler of the band, 
-    shoulder1 = the right shoudler of the band, 
+    shoulder1 = the right shoulder of the band, 
     min1000 = the minimum at 1 um,
     min2000 = the minimum ar 2 um.
     
@@ -779,7 +779,7 @@ def IBDII(removed_cube):
     removed_cube = the continuum-removed cube.
     
     Output:
-    Integrated band dpeth at 2 um.'''
+    Integrated band depth at 2 um.'''
     
     y2000,z2000=removed_cube[0,:,:].shape
     IBDII=removed_cube[0,:,:].copy()
@@ -812,7 +812,7 @@ def IBDI(removed_cube):
     removed_cube = the continuum-removed cube.
     
     Output:
-    Integrated band dpeth at 1 um.'''
+    Integrated band depth at 1 um.'''
     
     y2000,z2000=removed_cube[0,:,:].shape
     IBDI=removed_cube[0,:,:].copy()

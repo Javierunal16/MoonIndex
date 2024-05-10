@@ -286,9 +286,9 @@ def convexhull_plot(filtered_cube, wavelengths_full,mid_point,y_hull,x_hull):
     return plt
 
 
-#Linear fit method
-def linearfit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):    
-    '''Plots the reuslt of the linear fit continuum-removal method for a pixel. The limits for the fits are manually defined using values established in the literature. This function is only for viewing, to perform the removal use the homonimous function under Preparation. 
+#second-and-first-order fit fit method
+def safofit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):    
+    '''Plots the result of the second-and-first-order fit continuum-removal method for a pixel. The limits for the fits are manually defined using values established in the literature. This function is only for viewing, to perform the removal use the homonimous function under Preparation. 
     
     Inptus:
     filtered_cube = the filtered cube,
@@ -297,21 +297,21 @@ def linearfit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):
     x_plot = the x position of the pixel.
     
     Outputs:
-    Plot of the continuum-removed spectrum (LF).'''
+    Plot of the continuum-removed spectrum (SAFO).'''
 
     #Second order fit for 1000 nm, it used a range for the two shoudlers around the 1000 nm absorption
-    lf_cube=filtered_cube.data[0:74,x_plot,y_plot]  
+    SAFO_cube=filtered_cube.data[0:74,x_plot,y_plot]  
     fitx10001=wavelengths[1:7]
     fitx10002=wavelengths[39:42]
     fitx1000=np.hstack((fitx10001,fitx10002))
-    fity10001=lf_cube[1:7]
-    fity10002=lf_cube[39:42]
+    fity10001=SAFO_cube[1:7]
+    fity10002=SAFO_cube[39:42]
     fity1000=np.hstack((fity10001,fity10002))
     fit1000=np.polyfit(fitx1000,fity1000,2)
     polival1000=np.polyval(fit1000,wavelengths[0:42])
     #Fit for 2000 nm, linear
     fitx2000=np.hstack((fitx10002,wavelengths[73])) 
-    fity2000=np.hstack((fity10002,lf_cube[73]))
+    fity2000=np.hstack((fity10002,SAFO_cube[73]))
     fit2000=np.polyfit(fitx2000,fity2000,1)
     polival2000=np.polyval(fit2000,wavelengths[42:74])
     #Continuum removal by dividing
@@ -320,7 +320,7 @@ def linearfit_plot(filtered_cube, removed_cube, wavelengths,y_plot,x_plot):
     continum_removed=removed_cube[:,x_plot,y_plot]
     
     fig, axes = plt.subplots(2, 1, sharex=True)
-    axes[0].plot(wavelengths[0:74], lf_cube, label='Data')
+    axes[0].plot(wavelengths[0:74], SAFO_cube, label='Data')
     axes[0].plot(wavelengths[0:74],continuum, label='Continuum')
     axes[0].legend()
     axes[1].plot(wavelengths[0:74], continum_removed[0:74], label='Data / Continuum')
