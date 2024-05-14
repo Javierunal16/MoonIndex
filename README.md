@@ -45,7 +45,7 @@ And then, to create the indexes:
 
 Or:
 
-`M3_full_LF=MoonIndex.indexes.indexes_total_LF(M3_cube,wavelengths,2,1)` With the linear-fit continuum removal method (the last two variables are the polynomial order for the fit around the 1000 and 2000 nm bands).
+`M3_full_SAFO=MoonIndex.indexes.indexes_total_SAFO(M3_cube,wavelengths,2,1)` With the second-and-first-order fit continuum removal method (the last two variables are the polynomial order for the fit around the 1000 and 2000 nm bands).
 
 ## List of indexes
 | Index Name                          | Abrev. Name | Product type    | Source                     |
