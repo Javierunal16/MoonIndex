@@ -61,7 +61,7 @@ def crop_cube (initial_cube,minnx,minny,maxxx,maxxy):
     return croped_cube
 
 def crop_cube_size (initial_cube,cx1,cy1,cx2,cy2):
-    '''Crop the prepared cube to a desired location, usign the number of lines and columns of the file. Be caurefull to select values inside the image size. 
+    '''Crop the prepared cube to a desired location, usign the number of lines and columns of the file. Be carefull to select values inside the image size. 
     
     Inputs: 
     initial_cube = prepared cube, 
@@ -90,10 +90,10 @@ def crop_cube_size (initial_cube,cx1,cy1,cx2,cy2):
 ###CONTINUUM-REMOVAL
 
 def midpoint(filtered_cube,wavelengths,peak_distance,peak_prominence):
-    '''Finds the tie-point to limit the two absorption bands, used when the slope of the spectra is too steep. It used an automatic fucntion to detect local peaks. 
+    '''Finds the tie-point to limit the two absorption bands, used when the slope of the spectra is too steep. It used an automatic function to detect local peaks. 
     
     Inputs:
-    fitlered_cube = filtered cube,
+    filtered_cube = filtered cube,
     wavelengths = wavelengths,
     peak_distance = the minimum distance between peaks (6 is recommended),
     peak_prominence = the minimum prominence of the peaks (0.002 is recommended).
@@ -141,7 +141,7 @@ def convexhull_removal(filtered_cube, wavelengths_full,mid_point):
     '''Remove the continuum of the spectra using the convex-hull method. 
     
     Inputs:
-    filtered_cube = fitlered cube, 
+    filtered_cube = filtered cube, 
     wavelengths_full = wavelengths,
     mid_point = tie-point cube.
     
@@ -276,8 +276,8 @@ def find_shoulders_ch (hull_cube,midpoint,min_1000,min_2000, wavelengths3):
     Inputs:
     hull_cube = continuum removed cube (CH),
     midpoint = tie-point,
-    min_1000 = the minimuum at 1 um cube, 
-    min_2000 = the minimuum at 2 um cube,
+    min_1000 = the minimum at 1 um cube, 
+    min_2000 = the minimum at 2 um cube,
     wavelengths3 = wavelengths.
     
     Outputs:
@@ -391,8 +391,8 @@ def continuum_removal_SAFO (filtered_cube,wavelengths,order1,order2):
     Inputs:
     filtered_cube = fitlered cube, 
     wavelengths = wavelengths,
-    order1 = polynomial order for the first absoprtion band.
-    order2 = polynomial order for the second absoprtion band.
+    order1 = polynomial order for the first absorption band.
+    order2 = polynomial order for the second absorption band.
         
     Outputs:
     Continuum removed cube by second-and-first-order fit (SAFO).'''
@@ -517,8 +517,8 @@ def find_shoulders_SAFO (SAFO_cube,min_1000SAFO,min_2000SAFO, wavelengths):
     
     Inputs:
     SAFO_cube = continuum removed cube (SAFO),
-    min_1000SAFO = the minimuum at 1 um cube, 
-    min_2000SAFO = the minimuum at 2 um cube,
+    min_1000SAFO = the minimum at 1 um cube, 
+    min_2000SAFO = the minimum at 2 um cube,
     wavelengths = wavelengths.
     
     Outputs:

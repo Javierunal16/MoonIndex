@@ -7,16 +7,16 @@ import xarray as xa
 ###CALCULATING ALL THE INDEXES
 
 def indexes_total_CH(M3_cube,wavelengths):
-    '''This function performs the full process of creating the indexes using the convex-hull removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+    '''This function performs the full process of creating the indexes using the convex-hull removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can input the full cube after that (it will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
     wavelengths = the wavelengths.
     
     Outputs:
-    An image with all the indexes proccesed (CH).'''
+    An image with all the indexes processed (CH).'''
     
-    #Filtration
+    #filtering
     fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
     #Inputs are the original cube and wavelengths
     gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  
@@ -95,7 +95,7 @@ def indexes_total_CH(M3_cube,wavelengths):
 
 
 def indexes_total_SAFO(M3_cube,wavelengths,order1,order2):
-    '''This function performs the full process of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can inputs the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+    '''This function performs the full process of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can input the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
@@ -104,9 +104,9 @@ def indexes_total_SAFO(M3_cube,wavelengths,order1,order2):
     order2 = polynomial order for the second absorption band.
     
     Outputs:
-    An image with all the indexes proccesed (SAFO).'''
+    An image with all the indexes processed (SAFO).'''
     
-    #Filtration
+    #Filtering
     fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
     #Inputs are the original cube and wavelengths
     gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  
@@ -282,7 +282,7 @@ def clementine (gauss_cube):
     '''Creates the clementine-like index. 
     
     Input:
-    gauss_cube = fitlered cube.
+    gauss_cube = filtered cube.
     
     Output:
     The clementine-like RGB composite.'''
@@ -301,7 +301,7 @@ def RGB_spanpx (gauss_cube):
     '''Creates the spanpx (spinel-anorthosite-pyroxene) index. 
     
     Input:
-    gauss_cube = fitlered cube.
+    gauss_cube = filtered cube.
     
     Output:
     The spanpx RGB composite.'''

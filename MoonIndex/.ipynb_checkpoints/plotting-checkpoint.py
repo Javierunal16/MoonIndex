@@ -51,7 +51,7 @@ def image_plot(image_input,size2,title):
 
 
 def plot_comparison (cube_plot1, cube_plot2, band1,band2, title1, title2):
-    '''Plots two selected band of a cube or cubes, to compare between them. 
+    '''Plots two selected band of a cube or cubes, to compare them. 
     
     Inputs: 
     cube_plot1 = the first cube, 
@@ -78,11 +78,11 @@ def fourier_plot (initial_cube,band,percentage_width, percentage_height):
     Inputs: 
     initial_cube = the cube, 
     band = the band to check, 
-    percentage_width = the width of the filter in percentange,
+    percentage_width = the width of the filter in percentage,
     percentage_height = and height of the filter in percentage.
     
     Otput:
-    Image to check the Fourier fitlering.'''
+    Image to check the Fourier filtering.'''
     
     fouraster2=cv2.dft(initial_cube.data[band,:,:], flags=cv2.DFT_COMPLEX_OUTPUT) 
     fouraster2_shift=np.fft.fftshift(fouraster2)
@@ -178,7 +178,7 @@ def profile_plot (wavelengths,profile_singlecube,title_singleprofile, pixelx,pix
     '''Plot the spectral signature of a cube, the spectra is averaged in a window around the selected pixel. 
     
     Inputs:
-    wavelengths =  the wavlengths, 
+    wavelengths =  the wavelengths, 
     profile_singlecube = the first cube,
     title_singleprofile = the title of the first cube, 
     pixelx = the x position of the pixel to plot, 
@@ -205,17 +205,17 @@ def profile_plot (wavelengths,profile_singlecube,title_singleprofile, pixelx,pix
 
 
 def filter_comparison (cube_1,cube_2,title1,title2,band):
-    '''Plots a comparison between the cubes before and after the filtration. It also plots the ratio between the cubes, and an iamge showing the pixels that changed more than 2% in black. 
+    '''Plots a comparison between the cubes before and after the filtration. It also plots the ratio between the cubes, and an image showing the pixels that changed more than 2% in black. 
     
     Inputs: 
     cube1 =  the cube before, 
     cube2 = the cube after,
     title1 = the title of te first one, 
     title2 = the title of the second one, 
-    band = the band to ceck.
+    band = the band to check.
     
     Outputs:
-    Plots of to check the effect of the filtering.'''
+    Plots to check the effect of the filtering.'''
 
     #Ratio of the two images
     ratio_cubes=cube_1/cube_2  
@@ -244,8 +244,8 @@ def filter_comparison (cube_1,cube_2,title1,title2,band):
 
 
 def convexhull_plot(filtered_cube, wavelengths_full,mid_point,y_hull,x_hull):
-    '''Plots the reuslt of the convex hull continuum-removal method for a pixel. This function is only for viewing, to change the removal use the homonimous function under Preparation. 
-    Inptus:
+    '''Plots the result of the convex hull continuum-removal method for a pixel. This function is only for viewing, to change the removal use the homonymous function under Preparation. 
+    Inputs:
     filtered_cube = filtered cube,
     wavelengths_full = the wavelengths, 
     mid_point = the tie-point cube, 

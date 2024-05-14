@@ -5,7 +5,7 @@ import astropy.units as u
 import cv2
 
 def fourier_filter(original_cube,percentage_width,percentage_height):
-    '''Performs the fourier filtration of the cube in the spatial domain. 
+    '''Performs the fourier filtering of the cube in the spatial domain. 
     
     Inputs:
     original_cube = the prepared cube, 
@@ -58,7 +58,7 @@ def fourier_filter(original_cube,percentage_width,percentage_height):
 
 
 def gauss_filter (cube_filtered,wavelengths):
-    '''Performs the Gaussian filtration in the spectral domain. 
+    '''Performs the Gaussian filtering in the spectral domain. 
     
     Inputs:
     cube_filtered = fourier-filtered cube,
