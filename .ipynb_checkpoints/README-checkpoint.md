@@ -16,9 +16,9 @@ The installation can be done via PyPI using pip:
 
 `pip install MoonIndex`
 
-Or after downloading the MoonIndex-2.0.2.tar.gz file under dist:
+Or after downloading the MoonIndex-2.0.3.tar.gz file under dist:
 
-`pip install MoonIndex-2.0.2.tar.gz`
+`pip install MoonIndex-2.0.3.tar.gz`
 
 ## Example
 The notebooks under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes since the process is intensive. The sample cube used in these notebook can be found at: https://zenodo.org/records/10810407
