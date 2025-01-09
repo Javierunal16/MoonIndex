@@ -438,20 +438,20 @@ def RGB2 (gauss_cube,SSI_cube, R540_cube, BCII_cube):
     return RGB2
 
 
-def RGB3 (gauss_cube,SSI_cube,R540_cube,BCI_cube):
-    '''Creates the RGB3 index. R: SSBI, G: R540, B: BCI.
+def RGB3 (gauss_cube,SSI_cube,R540_cube,BDI_cube):
+    '''Creates the RGB3 index. R: SSBI, G: R540, B: BDI.
     
     Inputs:
     gauss_cube = the filtered cube, 
     SSI_cube = the spectral slope index,
     R540_cube = the reflectance at 540 nm,
-    BCI_cube = the band center at 1 um.
+    BDI_cube = the band depth at 1 um.
     
     Output:
     The RGB3 composite.'''
     
     RGB3=gauss_cube[0:3,:,:].copy()
-    RGB3.data=np.dstack((SSI_cube,R540_cube,BCI_cube)).transpose(2,0,1)
+    RGB3.data=np.dstack((SSI_cube,R540_cube,BDI_cube)).transpose(2,0,1)
     return RGB3
 
 
@@ -473,20 +473,20 @@ def RGB6 (removed_cube):
     return RGB6
 
 
-def RGB7 (gauss_cube,R1580,IBD1000,IBD2000):
-    '''Creates the RGB6 index. R: R1580, G: IBDI, B: IBDII.
+def RGB7 (gauss_cube,IBD1000,IBD2000, R1580):
+    '''Creates the RGB6 index. R: IBDI, G: IBDII, B: R1580.
     
     Inputs:
     gauss_cube = the filtered cube.
-    R1580 = the reflectance at 1580,
     IBD1000 = the integrated band depth at 1 um,
-    IBD2000 = the integrated band depth at 2 um.
+    IBD2000 = the integrated band depth at 2 um,
+    R1580 = the reflectance at 1580.
     
     Output:
     The RGB7 composite.'''
     
     RGB7=gauss_cube[0:3,:,:].copy()
-    RGB7.data=np.dstack((R1580,IBD1000,IBD2000)).transpose(2,0,1)
+    RGB7.data=np.dstack((IBD1000,IBD2000,R1580)).transpose(2,0,1)
     return RGB7
 
 
