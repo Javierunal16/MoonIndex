@@ -23,7 +23,7 @@ setup(
     , 'rioxarray>=0.15.0'
     , 'scikit-learn>=1.3.2'
     , 'scipy>=1.11.3'
-    , 'specutils>=1.12.0'
+    , 'specutils>=2.0.0'
     , 'xarray>=2023.10.1'
                      ],
     python_requires='>=3.10'
