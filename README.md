@@ -9,16 +9,16 @@ MoonIndex is a Python library that creates spectral indexes from the Moon Minera
 ![alt text](https://github.com/Javierunal16/Index/blob/main/README_files/Figure%204.jpeg)
 
 ## Requirements
-To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. The file Wavelengths.txt is also needed during the process. Moonindex requires Python 3.10 or higher.
+To use the package you first need map-projected (M<sup>3</sup>) cubes. This can be achieved using the USGS Integrated Software for Imagers and Spectrometers (ISIS), see https://github.com/DOI-USGS/ISIS3. Moonindex requires Python 3.10 or higher.
 
 ## Installation
 The installation can be done via PyPI using pip:
 
 `pip install MoonIndex`
 
-Or after downloading the MoonIndex-2.0.3.tar.gz file under dist:
+Or after downloading the MoonIndex-3.0.0.tar.gz file under dist:
 
-`pip install MoonIndex-2.0.3.tar.gz`
+`pip install MoonIndex-3.0.0.tar.gz`
 
 ## Example
 The notebooks under scripts details the workflow followed to obtain the indexes. We recommend slicing the cubes before creating the indexes since the process is intensive. The sample cube used in these notebook can be found at: https://zenodo.org/records/10810407
@@ -39,13 +39,13 @@ If you desire to crop the cube, you can use:
 
 `M3_cube=MoonIndex.preparation.crop_cube(M3_cube,x1,y1,x2,y2)` Where x and y are the coordinates in the reference system of your cube.
 
-And then, to create the indexes:
+And then, to create the indexes. This function can be paralelized, as well al other individual calculation fo indexes, please be careful with the amount of cores you use (-2 means all cores except 2, -3 all cores except 3, and None means no paralelization):
 
-`M3_full_CH=MoonIndex.indexes.indexes_total_CH(M3_cube,wavelengths)` With the convex hull continuum-removal method.
+`M3_full_CH=MoonIndex.indexes.indexes_total_CH(M3_cube,wavelengths, n_jobs= None)` With the convex hull continuum-removal method.
 
 Or:
 
-`M3_full_SAFO=MoonIndex.indexes.indexes_total_SAFO(M3_cube,wavelengths,2,1)` With the second-and-first-order fit continuum removal method (the last two variables are the polynomial order for the fit around the 1000 and 2000 nm bands).
+`M3_full_SAFO=MoonIndex.indexes.indexes_total_SAFO(M3_cube,wavelengths,2,1, n_jobs= None)` With the second-and-first-order fit continuum removal method (the last two variables are the polynomial order for the fit around the 1000 and 2000 nm bands).
 
 ## List of indexes
 | Index Name                          | Abrev. Name | Product type    | Source                     |

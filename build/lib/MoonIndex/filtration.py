@@ -1,5 +1,5 @@
 import numpy as np
-from specutils import Spectrum1D
+from specutils import Spectrum
 from specutils.manipulation import gaussian_smooth
 import astropy.units as u
 import cv2
@@ -70,7 +70,7 @@ def gauss_filter (cube_filtered,wavelengths):
     #Transposing data to ingest in Spec1d2
     tcube=np.transpose(cube_filtered.data,(2,1,0))  
     #Transforming data to spec1d2 file type 
-    spec1d2=Spectrum1D(spectral_axis=wavelengths[0::]*u.AA, flux=tcube*u.dimensionless_unscaled)  
+    spec1d2=Spectrum(spectral_axis=wavelengths[0::]*u.AA, flux=tcube*u.dimensionless_unscaled)  
     #Filtering with a 1d gaussian function, using a 4 pixel kernel
     spec1d2_gsmooth=gaussian_smooth(spec1d2, stddev=1) 
     #Slicing the filtered cube to avoid the affected data at longer wavelengths an re-attaching the original

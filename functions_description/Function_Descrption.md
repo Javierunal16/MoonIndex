@@ -8,19 +8,19 @@ The functions of the package are divided into four classes: Preparation, Filtrat
 
 **MoonIndex.preparation.crop_cube (initial_cube,minnx,minny,maxx,maxy):** Crop the prepared cube to a desired location, it can be done using the unit of the coordinate system or the number of lines and columns of the file. **Inputs** are the cube, minx, miny, maxx, maxy.
 
-**MoonIndex.preparation.midpoint(fourier_cube,wavelengths,peak_distance,peak_prominence):** Find the midpoint to limit the two absorption bands. **Inputs** are the filtered cube, the wavelengths, the minimum distance between peaks (6 is recommended), and the minimum prominence of the peaks (0.002 is recommended).
+**MoonIndex.preparation.midpoint(fourier_cube,wavelengths,peak_distance,peak_prominence, n_jobs=None):** Can be parallelized. Find the midpoint to limit the two absorption bands. **Inputs** are the filtered cube, the wavelengths, the minimum distance between peaks (6 is recommended), the minimum prominence of the peaks (0.002 is recommended), and number of cores to use.
 
-**MoonIndex.preparation.convexhull_removal(fourier_cube, wavelengths_full,mid_point):** Remove the continuum of the spectra using the convex-hull method. **Inputs** are the filtered cube, the wavelengths, and the midpoint.
+**MoonIndex.preparation.convexhull_removal(fourier_cube, wavelengths_full,mid_point, n_jobs=None):** Can be parallelized. Remove the continuum of the spectra using the convex-hull method. **Inputs** are the filtered cube, the wavelengths,the midpoint, and number of cores to use.
 
-**MoonIndex.preparation.find_minimums_ch (hull_cube,midpoint,wavelengths2):** This function finds the minimums around the 1 $\mu$m and 2 $\mu$m bands for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint, and the wavelengths.
+**MoonIndex.preparation.find_minimums_ch (hull_cube,midpoint,wavelengths2, n_jobs=None):** Can be parallelized. This function finds the minimums around the 1 $\mu$m and 2 $\mu$m bands for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint, the wavelengths and number of cores to use.
 
-**MoonIndex.preparation.find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3):** Find the shoulders around the 1 $\mu$m and 2 $\mu$m bands minimums for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint,the minimum at 1 $\mu$m, the minimum at 2 $\mu$m, and the wavelengths.
+**MoonIndex.preparation.find_shoulders_ch (hull_cube2,midpoint,min_1000,min_2000, wavelengths3, n_jobs=None):** Can be parallelized. Find the shoulders around the 1 $\mu$m and 2 $\mu$m bands minimums for the convex hull method. **Inputs** are the continuum-removed cube, the midpoint,the minimum at 1 $\mu$m, the minimum at 2 $\mu$m, and number of cores to use.
 
-**MoonIndex.preparation.continuum_removal_lf (gauss_cube,wavelengths2,order1,order2):** Remove the continuum of the spectra using the convex-hull method. **Inputs** are the filtered cube, the wavelengths, the polynomial order for the band at 1 $\mu$m, and the polynomial order for the band at 2 $\mu$m.
+**MoonIndex.preparation.continuum_removal_lf (gauss_cube,wavelengths2,order1,order2, n_jobs=None):** Can be parallelized. Remove the continuum of the spectra using the convex-hull method. **Inputs** are the filtered cube, the wavelengths, the polynomial order for the band at 1 $\mu$m, the polynomial order for the band at 2 $\mu$m, and number of cores to use.
 
-**MoonIndex.preparation.find_minimuumslf (lf_cube,wavelengths):** This function finds the minimums around the 1 $\mu$m and 2 $\mu$m bands for the linear fit method.**Inputs** are the continuum-removed cube and the wavelegnths.
+**MoonIndex.preparation.find_minimuumslf (lf_cube,wavelengths, n_jobs=None):** Can be parallelized. This function finds the minimums around the 1 $\mu$m and 2 $\mu$m bands for the linear fit method.**Inputs** are the continuum-removed cube, the wavelengths, and number of cores to use.
 
-**MoonIndex.preparation.find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths):** Find the shoulders arounf the the 1 $\mu$m and 2 $\mu$m bands minimums for the linear fit method. **Inputs** are the continuum-removed cube,the minimuum at 1 $\mu$m, the minimuum at 2 $\mu$m, and the wavelengths.
+**MoonIndex.preparation.find_shoulders_lf (lf_cube,min_1000lf,min_2000lf, wavelengths, n_jobs=None):** Can be parallelized. Find the shoulders arounf the the 1 $\mu$m and 2 $\mu$m bands minimums for the linear fit method. **Inputs** are the continuum-removed cube,the minimuum at 1 $\mu$m, the minimuum at 2 $\mu$m, the wavelengths, and number of cores to use.
 
 ## Filtration
 

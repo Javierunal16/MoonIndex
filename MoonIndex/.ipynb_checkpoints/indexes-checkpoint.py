@@ -2,181 +2,242 @@ import numpy as np
 import MoonIndex.preparation
 import MoonIndex.filtration
 import xarray as xa
-
+from joblib import Parallel, delayed
+import multiprocessing
+import time
 
 ###CALCULATING ALL THE INDEXES
 
-def indexes_total_CH(M3_cube,wavelengths):
+def indexes_total_CH(M3_cube,wavelengths, n_jobs=None):
     '''This function performs the full process of creating the indexes using the convex-hull removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can input the full cube after that (it will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
     wavelengths = the wavelengths.
+    n_jobs= Caution. Amount of cores for paralelization. Use -1 for all cores, or a negative number to leave some cores 
+    free (e.g., -2 means all but 2 cores).If None, defaults to 1 (no parallelism).
     
     Outputs:
     An image with all the indexes processed (CH).'''
-    
-    #filtering
-    fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
-    #Inputs are the original cube and wavelengths
-    gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  
+    start_total = time.time()
 
-    #Continuum removal
-    #Inputs are the filtered cube, the wavelengths, and the distance and prominence of the peaks
-    midpoint_cube=MoonIndex.preparation.midpoint(gauss_cube,wavelengths,6,0.002)  
-    #Inputs are the filtered cube, wavelengths and the midpoint
-    hull_cube=MoonIndex.preparation.convexhull_removal(gauss_cube,wavelengths,midpoint_cube)  
-    
-    #This copy the original cube to maintain coordiantes, 28 is for the total number of indexes
-    indexes_total=gauss_cube[0:28,:,:].copy()
-        
-    #Creating the minimums for the convex hull method
-    M3_min1000ch, M3_min2000ch=MoonIndex.preparation.find_minimums_ch(hull_cube,midpoint_cube,wavelengths)
-    #Obtaining the shoulders for the convex hull method
-    M3_shoulder0ch, M3_shoulder1ch, M3_shoulder2ch, M3_shoulder3ch=MoonIndex.preparation.find_shoulders_ch(hull_cube,midpoint_cube,M3_min1000ch,M3_min2000ch,wavelengths)
+    def log_time(msg, t0):
+        print(f"{msg}: {time.time() - t0:.2f} s")
 
-    #General indexes
-    #R540, reflectance at 540 nm (Zambon et al., 2020)
-    M3_R540=R540(gauss_cube) 
-    #R1580, reflectance at 540 nm (Besse et al., 2011)
-    M3_R1580=R1580(gauss_cube) 
-    #Spinel detection index (Moriarty III et al. 2022)
-    M3_sp=spinel(gauss_cube)  
-    #Olivine detection index  (Corley et al., 2018)
-    M3_ol=olivine(gauss_cube) 
-    #Chromtie detection index This work
-    M3_cr=chromite(gauss_cube)
-    #Iron detection index (Wu et al., 2012)
-    M3_fe=iron(gauss_cube)
-    #TiO detection index (Wu et al., 2012)
-    M3_ti=titanium(gauss_cube)
-    #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
-    M3_clem=clementine(gauss_cube)
-    #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
-    M3_spanpx=RGB_spanpx(gauss_cube)
+    print("=== Starting the proccesing using CH ===")
 
-    #Convex hull indexes
-    #BCI, band center ar 1000 nm
-    M3_BCI_CH=band_center(M3_min1000ch)
-    #BCII, band center ar 2000 nm
-    M3_BCII_CH=band_center(M3_min2000ch)
-    #BDI, band depth at 1000 nm with the convex hull method
-    M3_BDI_CH=band_depth(hull_cube,M3_min1000ch,wavelengths)
-    #BDII, band depth at 2000 nm with the convex hull method
-    M3_BDII_CH=band_depth(hull_cube,M3_min2000ch,wavelengths)
-    #SS1000, Spectral slope between maximun right shoulder and 540nm
-    M3_SSI_CH=SSI(gauss_cube,M3_shoulder1ch,wavelengths) 
-    #RGB8. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
-    M3_RGB8_CH=RGB8(gauss_cube,hull_cube)
-    #BA1000
-    M3_BAI1000_CH=BA(hull_cube,wavelengths,M3_shoulder0ch,M3_shoulder1ch)
-    #ASY1000
-    M3_ASY1000_CH=ASY(hull_cube,wavelengths,M3_shoulder0ch, M3_shoulder1ch,M3_min1000ch)
-    #BA2000
-    M3_BAI2000_CH=BA(hull_cube,wavelengths,M3_shoulder2ch,M3_shoulder3ch)
-    #ASY2000
-    M3_ASY2000_CH=ASY(hull_cube,wavelengths,M3_shoulder2ch, M3_shoulder3ch,M3_min2000ch)
-    #RGB6
-    M3_RGB6_CH=RGB6(hull_cube)
-    
-    #Creatinh the output cube
-    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_CH,M3_BCII_CH,M3_BDI_CH,M3_BDII_CH,M3_SSI_CH,
-                             M3_RGB8_CH[0],M3_RGB8_CH[1],M3_RGB8_CH[2],M3_BAI1000_CH,M3_ASY1000_CH,M3_BAI2000_CH,M3_ASY2000_CH,M3_RGB6_CH[0],M3_RGB6_CH[1],M3_RGB6_CH[2])).transpose(2,0,1)
-    
-    #Giving names to the bands
-    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter','Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter',
-             'Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm CH','Band center 2 µm CH','Band depth 1 µm CH','Band depth 2 µm CH',
-             'Spectral slope 1 µm CH','Band depth 1.9 µm CH','Integrated band depth 2 µm CH', 'Integrated band depth 1 µm CH','Band area 1 µm CH','Band assymetry 1 µm CH','Band area 2 µm CH','Band assymetry 2 µm CH','Band depth at 950 nm CH', 'Band depth at 1.05 µm CH','Band depth at 1.25 µm CH' ]
-    indexes_final_ch=xa.Dataset()
+    # Filtering
+    t0 = time.time()
+    fourier_cube = MoonIndex.filtration.fourier_filter(M3_cube, 60, 2)
+    log_time("Fourier filtering", t0)
 
+    t0 = time.time()
+    gauss_cube = MoonIndex.filtration.gauss_filter(fourier_cube, wavelengths)
+    log_time("Gaussian filtering", t0)
+
+    # Continuum removal
+    t0 = time.time()
+    midpoint_cube = MoonIndex.preparation.midpoint(gauss_cube, wavelengths, 6, 0.002, block_size=100, n_jobs=n_jobs)
+    log_time("Midpoint calculation", t0)
+
+    t0 = time.time()
+    hull_cube = MoonIndex.preparation.convexhull_removal(gauss_cube, wavelengths, midpoint_cube, block_size=100, n_jobs=n_jobs)
+    log_time("Convex hull removal", t0)
+
+    # Copy cube
+    indexes_total = gauss_cube[0:28, :, :].copy()
+
+    # Minima and shoulders
+    t0 = time.time()
+    M3_min1000ch, M3_min2000ch = MoonIndex.preparation.find_minimums_ch(hull_cube, midpoint_cube, wavelengths, block_size=100, n_jobs=n_jobs)
+    log_time("Minimums calculation", t0)
+
+    t0 = time.time()
+    M3_shoulder0ch, M3_shoulder1ch, M3_shoulder2ch, M3_shoulder3ch = MoonIndex.preparation.find_shoulders_ch(
+        hull_cube, midpoint_cube, M3_min1000ch, M3_min2000ch, wavelengths, block_size=100, n_jobs=n_jobs)
+    log_time("Shoulders calculation", t0)
+
+    # General indexes
+    t0 = time.time()
+    M3_R540 = R540(gauss_cube)
+    M3_R1580 = R1580(gauss_cube)
+    M3_sp = spinel(gauss_cube)
+    M3_ol = olivine(gauss_cube)
+    M3_cr = chromite(gauss_cube)
+    M3_fe = iron(gauss_cube)
+    M3_ti = titanium(gauss_cube)
+    M3_clem = clementine(gauss_cube)
+    M3_spanpx = RGB_spanpx(gauss_cube)
+    log_time("General indexes", t0)
+
+    # Convex hull indexes
+    t0 = time.time()
+    M3_BCI_CH = band_center(M3_min1000ch)
+    M3_BCII_CH = band_center(M3_min2000ch)
+    M3_BDI_CH = band_depth(hull_cube, M3_min1000ch, wavelengths,block_size=100, n_jobs=n_jobs)
+    M3_BDII_CH = band_depth(hull_cube, M3_min2000ch, wavelengths,block_size=100, n_jobs=n_jobs)
+    log_time("Band measurements", t0)
+
+    t0 = time.time()
+    M3_SSI_CH = SSI(gauss_cube, M3_shoulder1ch, wavelengths, block_size=100, n_jobs=n_jobs)
+    M3_RGB8_CH = RGB8(gauss_cube, hull_cube, block_size=100, n_jobs=n_jobs)
+    M3_RGB6_CH = RGB6(hull_cube)
+    log_time("Others", t0)
+
+    t0 = time.time()
+    M3_BAI1000_CH = BA(hull_cube, wavelengths, M3_shoulder0ch, M3_shoulder1ch)
+    M3_ASY1000_CH = ASY(hull_cube, wavelengths, M3_shoulder0ch, M3_shoulder1ch, M3_min1000ch,block_size=100, n_jobs=n_jobs)
+    M3_BAI2000_CH = BA(hull_cube, wavelengths, M3_shoulder2ch, M3_shoulder3ch)
+    M3_ASY2000_CH = ASY(hull_cube, wavelengths, M3_shoulder2ch, M3_shoulder3ch, M3_min2000ch,block_size=100, n_jobs=n_jobs)
+    log_time("Area and asymmetry", t0)
+
+    # Output stack
+    t0 = time.time()
+    indexes_total.data = np.dstack((
+        M3_R540, M3_R1580, M3_sp, M3_ol, M3_cr, M3_fe, M3_ti,
+        M3_clem[0], M3_clem[1], M3_clem[2],
+        M3_spanpx[0], M3_spanpx[1], M3_spanpx[2],
+        M3_BCI_CH, M3_BCII_CH, M3_BDI_CH, M3_BDII_CH, M3_SSI_CH,
+        M3_RGB8_CH[0], M3_RGB8_CH[1], M3_RGB8_CH[2],
+        M3_BAI1000_CH, M3_ASY1000_CH, M3_BAI2000_CH, M3_ASY2000_CH,
+        M3_RGB6_CH[0], M3_RGB6_CH[1], M3_RGB6_CH[2]
+    )).transpose(2, 0, 1)
+    log_time("Stacking output bands", t0)
+
+    # Naming bands
+    bands = ['Reflectance 540 nm', 'Reflectance 1580 nm', 'Spinel parameter (Moriarty, 2022)',
+             'Olivine parameter', 'Chromite parameter', 'Iron oxide parameter', 'Titanium parameter',
+             'Clementine RED', 'Clementine GREEN', 'Clementine BLUE', 'Pyroxene parameter',
+             'Spinel parameter (Pieters, 2014)', 'Anorthosite (Pieters, 2014)', 'Band center 1 µm CH',
+             'Band center 2 µm CH', 'Band depth 1 µm CH', 'Band depth 2 µm CH', 'Spectral slope 1 µm CH',
+             'Band depth 1.9 µm CH', 'Integrated band depth 2 µm CH', 'Integrated band depth 1 µm CH',
+             'Band area 1 µm CH', 'Band assymetry 1 µm CH', 'Band area 2 µm CH', 'Band assymetry 2 µm CH',
+             'Band depth at 950 nm CH', 'Band depth at 1.05 µm CH', 'Band depth at 1.25 µm CH']
+
+    indexes_final_ch = xa.Dataset()
     for e in range(28):
-        indexes_final_ch[bands[e]] = indexes_total[e,:,:]
-    return(indexes_final_ch.astype(np.float32))
+        indexes_final_ch[bands[e]] = indexes_total[e, :, :]
+
+    log_time("Total time", start_total)
+    print("=== Finsihing calculation ===")
+
+    return indexes_final_ch.astype(np.float32)
 
 
-def indexes_total_SAFO(M3_cube,wavelengths,order1,order2):
-    '''This function performs the full process of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be runned beforehand, but the user can input the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
+def indexes_total_SAFO(M3_cube, wavelengths, order1, order2, n_jobs=None):
+    '''This function performs the full process of creating the indexes using the second-and-first-order fit removal method, from the filtering to the indexes generation. The attach_wave (cube_alone,wave) function must still be run beforehand, but the user can input the full cube after that (will take a long time), or crop it with crop_cube (initial_cube,minnx,minny,maxx,maxy) to save time. 
     
     Inputs:
     M3_cube = the cube, 
     wavelengths = the wavelengths,
     order1 = polynomial order for the first absorption band,
     order2 = polynomial order for the second absorption band.
+    n_jobs= Caution. Amount of cores for parallelization. Use -1 for all cores, or a negative number to leave some cores 
+    free (e.g., -2 means all but 2 cores). If None, defaults to 1 (no parallelism).
     
     Outputs:
     An image with all the indexes processed (SAFO).'''
     
-    #Filtering
-    fourier_cube=MoonIndex.filtration.fourier_filter(M3_cube,60,2)
-    #Inputs are the original cube and wavelengths
-    gauss_cube=MoonIndex.filtration.gauss_filter(fourier_cube,wavelengths)  
+    start_total = time.time()
 
-    #Continuum removal
-    #Inputs are the filtered cube, wavelengths and the orders of polynomials
-    SAFO_cube=MoonIndex.preparation.continuum_removal_SAFO(gauss_cube,wavelengths,order1,order2)  
-    #This copy the original cube to maintain coordiantes, 28 is for the total number of indexes
-    indexes_total=gauss_cube[0:28,:,:].copy()
-        
-    #General indexes
-    #R540, reflectance at 540 nm (Zambon et al., 2020)
-    M3_R540=R540(gauss_cube) 
-    #R1580, reflectance at 540 nm (Besse et al., 2011)
-    M3_R1580=R1580(gauss_cube) 
-    #Spinel detection index (Moriarty III et al. 2022)
-    M3_sp=spinel(gauss_cube)  
-    #Olivine detection index  (Corley et al., 2018)
-    M3_ol=olivine(gauss_cube)  
-    #Chromtie detection index This work
-    M3_cr=chromite(gauss_cube)
-    #Iron detection index (Wu et al., 2012)
-    M3_fe=iron(gauss_cube)
-    #TiO detection index (Wu et al., 2012)
-    M3_ti=titanium(gauss_cube)
-    #Clementine-like RGB. R: R750 nm/R540 nm, G:,R750 nm/R1000 nm, B:R540nm/R750 nm
-    M3_clem=clementine(gauss_cube)
-    #RGB for mineral ratios. R: Pyroxene ratio, G: Spinel ratio, B:Anorthosite ratio (Pieters et al. 2014)
-    M3_spanpx=RGB_spanpx(gauss_cube)
-    
-    #Creating the minimmums with the second-and-first-order fit method
-    M3_min1000SAFO,M3_min2000SAFO=MoonIndex.preparation.find_minimums_SAFO(SAFO_cube,wavelengths)
-    M3_shoulder0SAFO,M3_shoulder1SAFO,M3_shoulder2SAFO=MoonIndex.preparation.find_shoulders_SAFO(SAFO_cube,M3_min1000SAFO,M3_min2000SAFO,wavelengths)
-    
-    #second-and-first-order fit indexes
-    #BCI, band center ar 1000 nm
-    M3_BCI_SAFO=band_center(M3_min1000SAFO)
-    #BCII, band center ar 2000 nm
-    M3_BCII_SAFO=band_center(M3_min2000SAFO)
-    #BDI, band depth at 1000 nm with the second-and-first-order fit method
-    M3_BDI_SAFO=band_depth(SAFO_cube,M3_min1000SAFO,wavelengths)
-    #BDII, band depth at 2000 nm with the second-and-first-order fit method
-    M3_BDII_SAFO=band_depth(SAFO_cube,M3_min2000SAFO,wavelengths)
-    #SS1000, Spectral slope between maximun right shoulder and 540nm
-    M3_SSI_SAFO=SSI(gauss_cube,M3_shoulder1SAFO,wavelengths) 
-    #RGB8. R: band depth (BD) 1900, integrated band depth(IBD) 2000, integrated band depth (IBD) 1000
-    M3_RGB8_SAFO=RGB8(gauss_cube,SAFO_cube)
-    #BAI1000
-    M3_BAI1000_SAFO=BA(SAFO_cube,wavelengths,M3_shoulder0SAFO,M3_shoulder1SAFO)
-    #ASY1000
-    M3_ASY1000_SAFO=ASY(SAFO_cube,wavelengths,M3_shoulder0SAFO, M3_shoulder1SAFO,M3_min1000SAFO)
-    #BAI2000
-    M3_BAI2000_SAFO=BA(SAFO_cube,wavelengths,M3_shoulder1SAFO,M3_shoulder2SAFO)
-    #ASY2000
-    M3_ASY2000_SAFO=ASY(SAFO_cube,wavelengths,M3_shoulder1SAFO, M3_shoulder2SAFO,M3_min2000SAFO)
-    #RGB6
-    M3_RGB6_SAFO=RGB6(SAFO_cube)
-    
-    #Creatinh the output cube
-    
-    indexes_total.data=np.dstack((M3_R540,M3_R1580,M3_sp,M3_ol,M3_cr,M3_fe,M3_ti,M3_clem[0],M3_clem[1],M3_clem[2],M3_spanpx[0],M3_spanpx[1],M3_spanpx[2],M3_BCI_SAFO,M3_BCII_SAFO,
-                                  M3_BDI_SAFO,M3_BDII_SAFO,M3_SSI_SAFO,M3_RGB8_SAFO[0],M3_RGB8_SAFO[1],M3_RGB8_SAFO[2],M3_BAI1000_SAFO,M3_ASY1000_SAFO,M3_BAI2000_SAFO,M3_ASY2000_SAFO,M3_RGB6_SAFO[0],M3_RGB6_SAFO[1],M3_RGB6_SAFO[2])).transpose(2,0,1)
-    
-    #Give name to the bands
-    bands = ['Reflectance 540 nm','Reflectance 1580 nm','Spinel parameter (Moriarty, 2022)','Olivine parameter', 'Chromite parameter','Iron oxide parameter','Titanium parameter','Clementine RED','Clementine GREEN','Clementine BLUE','Pyroxene parameter','Spinel parameter (Pieters, 2014)','Anorthosite (Pieters, 2014)','Band center 1 µm SAFO','Band center 2 µm SAFO','Band depth 1 µm SAFO','Band depth 2 µm SAFO','Spectral slope 1 µm SAFO','Band depth 1.9 µm SAFO','Integrated band depth 2 µm SAFO', 'Integrated band depth 1 µm SAFO','Band area 1 µm SAFO','Band assymetry 1 µm SAFO','Band area 2 µm SAFO','Band assymetry 2 µm SAFO','Band depth at 950 nm SAFO', 'Band depth at 1.05 µm SAFO','Band depth at 1.25 µm SAFO']
-    indexes_final_SAFO=xa.Dataset()
+    def log_time(msg, t0):
+        print(f"{msg}: {time.time() - t0:.2f} s", flush=True)
 
+    print("=== Starting the processing using SAFO ===", flush=True)
+
+    # Filtering
+    t0 = time.time()
+    fourier_cube = MoonIndex.filtration.fourier_filter(M3_cube, 60, 2)
+    gauss_cube = MoonIndex.filtration.gauss_filter(fourier_cube, wavelengths)  
+    log_time("Filtering", t0)
+
+    # Continuum removal
+    t0 = time.time()
+    SAFO_cube = MoonIndex.preparation.continuum_removal_SAFO(
+        gauss_cube, wavelengths, order1, order2, block_size=100, n_jobs=n_jobs
+    )
+    log_time("Continuum removal (SAFO)", t0)
+
+    # Copy to output cube
+    indexes_total = gauss_cube[0:28, :, :].copy()
+
+    # General indexes
+    t0 = time.time()
+    M3_R540 = R540(gauss_cube) 
+    M3_R1580 = R1580(gauss_cube) 
+    M3_sp = spinel(gauss_cube)  
+    M3_ol = olivine(gauss_cube)  
+    M3_cr = chromite(gauss_cube)
+    M3_fe = iron(gauss_cube)
+    M3_ti = titanium(gauss_cube)
+    M3_clem = clementine(gauss_cube)
+    M3_spanpx = RGB_spanpx(gauss_cube)
+    log_time("General indexes", t0)
+
+    # Find minimums and shoulders
+    t0 = time.time()
+    M3_min1000SAFO, M3_min2000SAFO = MoonIndex.preparation.find_minimums_SAFO(SAFO_cube, wavelengths, block_size=100, n_jobs=n_jobs)
+    M3_shoulder0SAFO, M3_shoulder1SAFO, M3_shoulder2SAFO = MoonIndex.preparation.find_shoulders_SAFO(
+        SAFO_cube, M3_min1000SAFO, M3_min2000SAFO, wavelengths, block_size=100, n_jobs=n_jobs)
+    log_time("Minimums and shoulders", t0)
+
+    # SAFO indexes
+    t0 = time.time()
+    M3_BCI_SAFO = band_center(M3_min1000SAFO)
+    M3_BCII_SAFO = band_center(M3_min2000SAFO)
+    M3_BDI_SAFO = band_depth(SAFO_cube, M3_min1000SAFO, wavelengths, block_size=100, n_jobs=n_jobs)
+    M3_BDII_SAFO = band_depth(SAFO_cube, M3_min2000SAFO, wavelengths,block_size=100, n_jobs=n_jobs)
+    log_time("Band measurements", t0)
+
+    t0 = time.time()
+    M3_SSI_SAFO = SSI(gauss_cube, M3_shoulder1SAFO, wavelengths, block_size=100, n_jobs=n_jobs)
+    M3_RGB6_SAFO = RGB6(SAFO_cube)
+    M3_RGB8_SAFO = RGB8(gauss_cube, SAFO_cube, block_size=100, n_jobs=n_jobs)
+    log_time("Others", t0)
+
+    t0 = time.time()
+    M3_BAI1000_SAFO = BA(SAFO_cube, wavelengths, M3_shoulder0SAFO, M3_shoulder1SAFO)
+    M3_ASY1000_SAFO = ASY(SAFO_cube, wavelengths, M3_shoulder0SAFO, M3_shoulder1SAFO, M3_min1000SAFO,block_size=100, n_jobs=n_jobs)
+    M3_BAI2000_SAFO = BA(SAFO_cube, wavelengths, M3_shoulder1SAFO, M3_shoulder2SAFO)
+    M3_ASY2000_SAFO = ASY(SAFO_cube, wavelengths, M3_shoulder1SAFO, M3_shoulder2SAFO, M3_min2000SAFO,block_size=100, n_jobs=n_jobs)
+    log_time("Area and asymmetry", t0)
+
+    # Output stack
+    t0 = time.time()
+    indexes_total.data = np.dstack((
+        M3_R540, M3_R1580, M3_sp, M3_ol, M3_cr, M3_fe, M3_ti,
+        M3_clem[0], M3_clem[1], M3_clem[2],
+        M3_spanpx[0], M3_spanpx[1], M3_spanpx[2],
+        M3_BCI_SAFO, M3_BCII_SAFO, M3_BDI_SAFO, M3_BDII_SAFO, M3_SSI_SAFO,
+        M3_RGB8_SAFO[0], M3_RGB8_SAFO[1], M3_RGB8_SAFO[2],
+        M3_BAI1000_SAFO, M3_ASY1000_SAFO, M3_BAI2000_SAFO, M3_ASY2000_SAFO,
+        M3_RGB6_SAFO[0], M3_RGB6_SAFO[1], M3_RGB6_SAFO[2]
+    )).transpose(2, 0, 1)
+    log_time("Stacking output cube", t0)
+
+    # Band naming
+    t0 = time.time()
+    bands = [
+        'Reflectance 540 nm', 'Reflectance 1580 nm', 'Spinel parameter (Moriarty, 2022)',
+        'Olivine parameter', 'Chromite parameter', 'Iron oxide parameter', 'Titanium parameter',
+        'Clementine RED', 'Clementine GREEN', 'Clementine BLUE',
+        'Pyroxene parameter', 'Spinel parameter (Pieters, 2014)', 'Anorthosite (Pieters, 2014)',
+        'Band center 1 µm SAFO', 'Band center 2 µm SAFO',
+        'Band depth 1 µm SAFO', 'Band depth 2 µm SAFO',
+        'Spectral slope 1 µm SAFO',
+        'Band depth 1.9 µm SAFO', 'Integrated band depth 2 µm SAFO', 'Integrated band depth 1 µm SAFO',
+        'Band area 1 µm SAFO', 'Band asymmetry 1 µm SAFO', 'Band area 2 µm SAFO', 'Band asymmetry 2 µm SAFO',
+        'Band depth at 950 nm SAFO', 'Band depth at 1.05 µm SAFO', 'Band depth at 1.25 µm SAFO'
+    ]
+
+    indexes_final_SAFO = xa.Dataset()
     for e in range(28):
-        indexes_final_SAFO[bands[e]] = indexes_total[e,:,:]
-    return(indexes_final_SAFO.astype(np.float32))
+        indexes_final_SAFO[bands[e]] = indexes_total[e, :, :]
+    log_time("Dataset creation", t0)
+
+    log_time("Total time SAFO", start_total)
+    print("=== Finsihing calculation ===")
+    return indexes_final_SAFO.astype(np.float32)
 
 ###INDIVIDUAL INDEXES
 
@@ -251,7 +312,7 @@ def chromite (gauss_cube):
 
 
 def iron (gauss_cube):
-    '''Creates the FeO index. 
+    '''Creates the FeO index. Which return iron oxide abundance in percentage. 
     
     Input:
     gauss_cube = filtered cube.
@@ -260,12 +321,13 @@ def iron (gauss_cube):
     FeO index.'''
     
     fe=gauss_cube[0,:,:].copy()
-    fe=np.arctan(((gauss_cube[19,:,:]/gauss_cube[6,:,:])-1.19)/(gauss_cube[6,:,]-0.08))
+    fep=-np.arctan(((gauss_cube[16,:,:]/gauss_cube[6,:,:])-1.26)/(gauss_cube[6,:,]-0.01))
+    fe.data=8.878 * (fep**1.8732)
     return fe
 
 
 def titanium (gauss_cube):
-    '''Creates the TiO index. 
+    '''Creates the TiO index. Which returns titanium oxide abundance in percentage.
     
     Input:
     gauss_cube = filtered cube.
@@ -274,7 +336,8 @@ def titanium (gauss_cube):
     TiO index.'''
     
     ti=gauss_cube[0,:,:].copy()
-    ti=np.arctan(((gauss_cube[0,:,:]/gauss_cube[6,:,:])-0.71)/(gauss_cube[6,:,]-0.07))
+    tip=np.arctan(((gauss_cube[0,:,:]/gauss_cube[6,:,:])-0.45)/(gauss_cube[6,:,]-0.05))
+    ti.data=2.6275 * (tip**4.2964)
     return ti
 
 
@@ -330,77 +393,125 @@ def band_center (minimum):
 
 
 
-def band_depth (removed_cube,minimum,wavelengths):
+def band_depth(removed_cube, minimum, wavelengths, block_size=100, n_jobs=None):
     '''Creates the band depth, it works for both absorption bands by changing the corresponding inputs. 
     
     Inputs:
     removed_cube = continuum-removed cube,
     minimum = the minimum image,
     wavelengths = the wavelengths.
+    block_size= Size of the block during the paralelization.
+    n_jobs= Amount of cores for paralelization. Use -1 for all cores, or negative to leave some cores free.
     
     Output:
     The band depth of the selected absorption band.'''
 
-    #Copying the cube to save the results
-    cube_depth=removed_cube[0,:,:].copy()  
-    stack_depth=[]
-    y,z=removed_cube[0,:,:].shape
-    wavelengths=wavelengths[0:74]
-    
-    for a in range(removed_cube.data.shape[1]):
-        for b in range(removed_cube.data.shape[2]):
-            
-            input_depth=removed_cube.data[:,a,b]
-                    
-            if minimum[a,b] == 0:   
-                    stack_depth.append(0)
-            else:
-                input_min=minimum.data[a,b]
-                pre_input_minp=np.where(wavelengths==input_min)[0][0]
-                minp=int(pre_input_minp)
-                #Finding the value of the band depth
-                band_depth=1 - input_depth[minp]  
-    
-                stack_depth.append(band_depth)
-            
-    stack_deptha=np.array(stack_depth)
-    cube_depth.data=stack_deptha.reshape(y,z)
-    cube_depth.data[cube_depth.data==0]=np.nan
+    y, z = removed_cube[0, :, :].shape
+    wavelengths = wavelengths[0:74]
+    cube_depth = removed_cube[0, :, :].copy()
+
+    # Resolve number of jobs
+    if n_jobs is None:
+        n_jobs = 1
+    elif n_jobs < 0:
+        n_jobs = max(1, multiprocessing.cpu_count() + n_jobs)
+
+    def process_pixel(a, b):
+        input_depth = removed_cube.data[:, a, b]
+        if minimum[a, b] == 0:
+            return 0
+        else:
+            input_min = minimum.data[a, b]
+            pre_input_minp = np.where(wavelengths == input_min)[0][0]
+            minp = int(pre_input_minp)
+            band_depth_val = 1 - input_depth[minp]
+            return band_depth_val
+
+    def process_block(r_start, r_end, c_start, c_end):
+        block_result = np.zeros((r_end - r_start, c_end - c_start), dtype=np.float32)
+        for a in range(r_start, r_end):
+            for b in range(c_start, c_end):
+                block_result[a - r_start, b - c_start] = process_pixel(a, b)
+        return block_result
+
+    blocks = []
+    for r in range(0, y, block_size):
+        for c in range(0, z, block_size):
+            r_end = min(r + block_size, y)
+            c_end = min(c + block_size, z)
+            blocks.append((r, r_end, c, c_end))
+
+    results = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(process_block)(r_start, r_end, c_start, c_end) for (r_start, r_end, c_start, c_end) in blocks
+    )
+
+    full_array = np.zeros((y, z), dtype=np.float32)
+    for idx, (r_start, r_end, c_start, c_end) in enumerate(blocks):
+        full_array[r_start:r_end, c_start:c_end] = results[idx]
+
+    cube_depth.data = full_array
+    cube_depth.data[cube_depth.data == 0] = np.nan
+
     return cube_depth
 
 
-def SSI (gauss_cube,shoulder1, wavelengths):
-    '''Creates the sprectral slope at 1 um index. This is done between the 540 nm band and the left shoulder of the 1 um band.
-    
+def SSI(gauss_cube, shoulder1, wavelengths, block_size=100, n_jobs=None):
+    '''Creates the spectral slope at 1 um index. This is done between the 540 nm band and the left shoulder of the 1 um band.
+
     Inputs: 
     gauss_cube = the filtered cube, 
     shoulder1 = the right shoulder of the 1 um band,
     wavelengths = the wavelengths.
-    
+    block_size = size of processing block for parallelization.
+    n_jobs = number of parallel jobs (cores).
+
     Output:
     The spectral slope at 1 um.'''
-    
-    SSI=gauss_cube[0,:,:].copy()
-    stack_SSI=[]
-    y,z=gauss_cube[0,:,:].shape
-    for a in range(gauss_cube.data.shape[1]):
-        for b in range(gauss_cube.data.shape[2]):
-            
-            input_SS1200=gauss_cube.data[:,a,b]
-                    
-            if shoulder1[a,b] == 0:   
-                    stack_SSI.append(0)
-            else:
-                input_shoulder1=shoulder1.data[a,b]
-                pre_shoulder1=np.where(wavelengths==input_shoulder1)[0]
-                shoulder1p=int(pre_shoulder1)
-                #Calculating the slope beetwen the R540 and the shoulder
-                SS=((input_SS1200[shoulder1p])-input_SS1200[0])/(((wavelengths[shoulder1p])-0.54084)*0.54084)  
-                stack_SSI.append(SS)
-        
-    stack_SSIa=np.array(stack_SSI)
-    SSI.data=stack_SSIa.reshape(y,z)
-    SSI.data[SSI.data==0]=np.nan
+
+    SSI = gauss_cube[0, :, :].copy()
+    y, z = gauss_cube[0, :, :].shape
+
+    if n_jobs is None:
+        n_jobs = 1
+    elif n_jobs < 0:
+        n_jobs = max(1, multiprocessing.cpu_count() + n_jobs)
+
+    def process_block(r_start, r_end, c_start, c_end):
+        block_result = np.zeros((r_end - r_start, c_end - c_start), dtype=np.float32)
+        for a in range(r_start, r_end):
+            for b in range(c_start, c_end):
+                if shoulder1[a, b] == 0:
+                    block_result[a - r_start, b - c_start] = 0
+                else:
+                    input_SS1200 = gauss_cube.data[:, a, b]
+                    input_shoulder1 = shoulder1.data[a, b]
+                    pre_shoulder1 = np.where(wavelengths == input_shoulder1)[0]
+                    if len(pre_shoulder1) == 0:
+                        block_result[a - r_start, b - c_start] = 0
+                        continue
+                    shoulder1p = int(pre_shoulder1[0])
+                    SS = ((input_SS1200[shoulder1p]) - input_SS1200[0]) / (((wavelengths[shoulder1p]) - 0.54084) * 0.54084)
+                    block_result[a - r_start, b - c_start] = SS
+        return block_result
+
+    blocks = []
+    for r in range(0, y, block_size):
+        for c in range(0, z, block_size):
+            r_end = min(r + block_size, y)
+            c_end = min(c + block_size, z)
+            blocks.append((r, r_end, c, c_end))
+
+    results = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(process_block)(r_start, r_end, c_start, c_end) for (r_start, r_end, c_start, c_end) in blocks
+    )
+
+    full_result = np.zeros((y, z), dtype=np.float32)
+    for idx, (r_start, r_end, c_start, c_end) in enumerate(blocks):
+        full_result[r_start:r_end, c_start:c_end] = results[idx]
+
+    SSI.data = full_result
+    SSI.data[SSI.data == 0] = np.nan
+
     return SSI
 
 
@@ -596,90 +707,125 @@ def RGB4 (gauss_cube,wavelengths,shoulder0,shoulder1,minimum_1000,minimum_2000):
     return CCA
 
 
-#Asimetry 1000 nm
-def ASY (removed_cube,wavelengths,shoulder0,shoulder1,min1000):
-    '''Creates the band asymmetry index, it works for both absorption bands by changing the corresponding inputs. 
-    
+def ASY(removed_cube, wavelengths, shoulder0, shoulder1, min1000, block_size=100, n_jobs=None):
+    '''Creates the band asymmetry index. Works for absorption bands by specifying appropriate shoulders and band minimum.
+
     Inputs: 
-    removed_cube = the continuum-removed cube,
-    wavelengths = the wavelengths,
-    shoulder0 = the left shoudler of the band, 
-    shoulder1 = the right shoulder of the band, 
-    min1000 = the minimum of the selected band.
-    
+    removed_cube = the continuum-removed cube (reflectance values from 0 to 1),
+    wavelengths = array of wavelength values,
+    shoulder0 = left shoulder wavelength of the band,
+    shoulder1 = right shoulder wavelength of the band,
+    min1000 = wavelength of the band minimum.
+    block_size = block size for parallel processing.
+    n_jobs = number of cores to use. -1 for all cores, negative leaves that many cores free.
+
     Output:
-    Band asymmetry of the selected band.'''
-    
-    #Finding the spectral resolution, neccesary to find the area
-    SR=np.diff(wavelengths)  
-    #Adding the first value
-    SR=np.append(39.92,SR)   
-    
-    #Caculating the asymmetry
-    y,z=removed_cube[0,:,:].shape
-    ASY=removed_cube[0,:,:].copy()
+    2D image of band asymmetry values for each pixel, with optional local parabolic smoothing.
+    '''
 
-    stack_ASY1=[]
-    stack_ASY2=[]
-    stack_ASY3=[]
-    for a in range(removed_cube.data.shape[1]):
-        for b in range(removed_cube.data.shape[2]):
-            
-            #The asymmetry is also calculated inside the shoulders
-            s00 = shoulder0.data[a,b]  
-            s11 = shoulder1.data[a,b]
-            input_min1000=min1000.data[a,b]
-            
-            if s00 == 0 or s11 == 0:   
-                    stack_ASY1.append(0)
-                    stack_ASY2.append(0)
-                    
+    # Compute spectral resolution
+    SR = np.diff(wavelengths)
+    SR = np.append(39.92, SR)  # Add the first resolution manually
+
+    y, z = removed_cube[0, :, :].shape
+    ASY = removed_cube[0, :, :].copy()
+
+    # Configure number of parallel jobs
+    if n_jobs is None:
+        n_jobs = 1
+    elif n_jobs < 0:
+        n_jobs = max(1, multiprocessing.cpu_count() + n_jobs)
+
+    # Define block processor
+    def process_block(r_start, r_end, c_start, c_end):
+        block_result = np.zeros((r_end - r_start, c_end - c_start), dtype=np.float32)
+        for a in range(r_start, r_end):
+            for b in range(c_start, c_end):
+                if removed_cube[39, a, b] == 0:
+                    block_result[a - r_start, b - c_start] = 0
+                    continue
+
+                s00 = shoulder0.data[a, b]
+                s11 = shoulder1.data[a, b]
+                input_min1000 = min1000.data[a, b]
+
+                if s00 == 0 or s11 == 0:
+                    block_result[a - r_start, b - c_start] = 0
+                else:
+                    try:
+                        start1 = np.where(wavelengths == s00)[0][0].item()
+                        end1 = np.where(wavelengths == s11)[0][0].item()
+                        middle = np.where(wavelengths == input_min1000)[0][0].item()
+
+                        input_SR1 = SR[start1:middle + 1]
+                        input_SR2 = SR[middle + 1:end1]
+                        input_CCA = removed_cube.data[:, a, b]
+
+                        sum4 = sum((1 - input_CCA[c]) * SR[c] for c in range(start1, middle + 1))
+                        sum5 = sum((1 - input_CCA[d]) * SR[d] for d in range(middle + 1, end1))
+
+                        total = sum4 + sum5
+                        if sum4 == 0 or total == 0:
+                            block_result[a - r_start, b - c_start] = 0
+                        elif sum4 > sum5:
+                            block_result[a - r_start, b - c_start] = -((sum4 - sum5) * 100 / total)
+                        else:
+                            block_result[a - r_start, b - c_start] = ((sum5 - sum4) * 100 / total)
+                    except:
+                        block_result[a - r_start, b - c_start] = 0
+        return block_result
+
+    # Create spatial blocks
+    blocks = []
+    for r in range(0, y, block_size):
+        for c in range(0, z, block_size):
+            r_end = min(r + block_size, y)
+            c_end = min(c + block_size, z)
+            blocks.append((r, r_end, c, c_end))
+
+    # Parallel execution of blocks
+    results = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(process_block)(r_start, r_end, c_start, c_end) for (r_start, r_end, c_start, c_end) in blocks
+    )
+
+    # Assemble results
+    ASY_values = np.zeros((y, z), dtype=np.float32)
+    idx = 0
+    for r_start, r_end, c_start, c_end in blocks:
+        ASY_values[r_start:r_end, c_start:c_end] = results[idx]
+        idx += 1
+
+    # Local 2D parabolic smoothing (11x11 window)
+    ASY_smoothed = ASY.data.copy()
+    offset = 3
+    for i in range(y):
+        for j in range(z):
+            if ASY_values[i, j] == 0:
+                ASY_smoothed[i, j] = 0
+                continue
+
+            i_min = max(0, i - offset)
+            i_max = min(y, i + offset + 1)
+            j_min = max(0, j - offset)
+            j_max = min(z, j + offset + 1)
+
+            window = ASY_values[i_min:i_max, j_min:j_max].flatten()
+            x = np.arange(len(window))
+
+            if len(window) >= 6 and not np.all(np.isnan(window)):
+                try:
+                    fit = np.polyfit(x, window, 2)
+                    smoothed_val = np.polyval(fit, x[len(x) // 2])
+                    ASY_smoothed[i, j] = smoothed_val
+                except:
+                    ASY_smoothed[i, j] = ASY_values[i, j]
             else:
-                #Definnig the range
-                start1 = np.where(wavelengths == s00)[0][0].item()  
-                end1 = np.where(wavelengths == s11)[0][0].item()
-                middle=np.where(wavelengths == input_min1000)[0][0].item()
-           
-                input_SR1= SR[start1:middle]
-                input_SR2= SR[middle:end1]
-                input_CCA= removed_cube.data[:,a,b]
-            
-                sum4=0
-                for c in range(start1, middle):
-                    #Calculating the area of the first half of the zone
-                    sum4 += ((1 - input_CCA[c-start1]) * input_SR1[c-start1])  
-                
-                stack_ASY1.append(sum4)
-            
-                sum5=0
-                
-                for d in range(middle, end1):
-                    #Calculating the area of the second half of the zone
-                    sum5 += ((1 - input_CCA[d-middle]) * input_SR2[d-middle])  
-                
-                stack_ASY2.append(sum5)         
-            
-    #Asimetry calculation
-    #Calcualting the total area
-    sum_ASY=np.add(stack_ASY1,stack_ASY2)  
+                ASY_smoothed[i, j] = ASY_values[i, j]
 
-    for a in range(len(stack_ASY2)):
-        
-        if stack_ASY1[a] ==0:
-            
-            stack_ASY3.append(0)
-        #If the left side area is bigger, the asymmetry is negative  
-        elif stack_ASY1[a] > stack_ASY2[a]:  
-            #The asymmetry is the difference between the two areas when dividing the peak in half, it is given as a pecentage of the total area
-            stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  
-                    
-        else:  
-            #If the right side area is bigger, the asymmetry is positive    
-            stack_ASY3.append((stack_ASY2[a]-stack_ASY1[a])*100/sum_ASY[a])
+    # Replace 0s with NaN (optional)
+    ASY_smoothed[ASY_smoothed == 0] = np.nan
+    ASY.data = ASY_smoothed
 
-    stack_ASY3a=np.array(stack_ASY3)
-    ASY.data=stack_ASY3a.reshape(y,z)
-    ASY.data[ASY.data==0]=np.nan
     return ASY
 
 
@@ -727,22 +873,22 @@ def RGB5 (gauss_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
                 end1 = np.where(wavelengths == s11)[0][0].item()
                 middle=np.where(wavelengths == input_min1000)[0][0].item()
            
-                input_SR1= SR[start1:middle]
-                input_SR2= SR[middle:end1]
+                input_SR1= SR[start1:middle + 1]
+                input_SR2= SR[middle + 1 :end1]
                 input_CCA= gauss_cube.data[:,a,b]
             
                 sum4=0
-                for c in range(start1, middle):
+                for c in range(start1, middle+1):
                     #Calculating the area of the first half of the zone
-                    sum4 += ((1 - input_CCA[c-start1]) * input_SR1[c-start1])  
+                    sum4 += ((1 - input_CCA[c]) * input_SR1[c-start1])  
                 
                 stack_ASY1.append(sum4)
             
                 sum5=0
                 
-                for d in range(middle, end1):
+                for d in range(middle+1, end1):
                     #Calculating the area of the second half of the zone
-                    sum5 += ((1 - input_CCA[d-middle]) * input_SR2[d-middle])  
+                    sum5 += ((1 - input_CCA[d]) * input_SR2[d-middle])  
                 
                 stack_ASY2.append(sum5)         
             
@@ -838,65 +984,87 @@ def IBDI(removed_cube):
     return IBDI
 
 
-def RGB8 (gauss_cube,removed_cube):
-    '''Creates the RGB5 index. R: BD1900, G: IBD2000, B: IBD1000.
+def RGB8(gauss_cube, removed_cube, block_size=50, n_jobs=None):
+    '''Creates the RGB8 index. R: BD1900, G: IBD2000, B: IBD1000.
     
     Inputs:
     gauss_cube = the filtered cube.
     removed_cube = continuum-removed cube.
+    block_size = size of processing block for parallelization.
+    n_jobs = number of parallel jobs (cores).
     
     Output:
     The RGB8 RGB composite.'''
-    
-    y1000,z1000=removed_cube[0,:,:].shape
-    y2000,z2000=removed_cube[0,:,:].shape
-    #Band 1. Finds the band depth at 1900 by dividing the reflectance by the continumm value
-    RGB81= 1 - (removed_cube[55,:,:])
-    RGB81.data[RGB81.data==1]=np.nan
-    
-    #Band 2 The integrated band depth at 2000 is calcualted as the summatory of 1 minus the factor between the reflectance and continuum value of the band that makes the 2000 nm region 
-    RGB82=removed_cube[0,:,:].copy()
-    #Defines the section to iterate around 2000 nm
-    RGB82_slice=removed_cube[49:70,:,:]  
-    stack_RGB82=[]
-    
-    for a in range(RGB82_slice.data.shape[1]):
-        for b in range(RGB82_slice.data.shape[2]):
-            sum1=0
-            if RGB82_slice[19,a,b]==0: 
-                    stack_RGB82.append(0)
-            else:
-                for c in range(RGB82_slice.data.shape[0]):
-                    input_removed=RGB82_slice.data[:,a,b]
-                    #Summatory
-                    sum1 += (1- input_removed[c])  
-                stack_RGB82.append(sum1)
-        
-    stack_RGB82a=np.array(stack_RGB82)
-    RGB82.data=stack_RGB82a.reshape(y2000,z2000)
-    
-     #Band 3 The integrated band depth at 1000 is calcualted as the summatory of 1 minus the factor between the reflectance and continuum value of the band that makes the 1000 nm region
-    RGB83=removed_cube[0,:,:].copy()
-    #Defines the section to iterate around 1000 nm
-    RGB83_slice=removed_cube[8:34,:,:]  
-    stack_RGB83=[]
-    
-    for a in range(RGB83_slice.data.shape[1]):
-        for b in range(RGB83_slice.data.shape[2]):
-            sum2=0
-            if RGB83_slice[19,a,b]==0: 
-                    stack_RGB83.append(0)
-            else:
-                for c in range(RGB83_slice.data.shape[0]):
-                    input_removed4=RGB83_slice.data[:,a,b]
-                    sum2 += (1-input_removed4[c])
-                stack_RGB83.append(sum2)
-            
-    stack_RGB83a=np.array(stack_RGB83)
-    RGB83.data=stack_RGB83a.reshape(y1000,z1000)
-    
-    #Making the composite
-    RGB8_total=gauss_cube[0:3,:,:].copy()
-    RGB8_total.data=np.dstack((RGB81,RGB82,RGB83)).transpose(2,0,1)
-    RGB8_total.data[RGB8_total.data==0]=np.nan
+
+    y, z = removed_cube[0, :, :].shape
+
+    # Band 1: Band depth at 1900 nm
+    RGB81 = 1 - removed_cube[55, :, :]
+    RGB81.data[RGB81.data == 1] = np.nan
+
+    # Prepare containers for bands 2 and 3
+    RGB82 = removed_cube[0, :, :].copy()
+    RGB83 = removed_cube[0, :, :].copy()
+
+    # Slices for bands 2 and 3
+    RGB82_slice = removed_cube[49:70, :, :]
+    RGB83_slice = removed_cube[8:34, :, :]
+
+    # Resolve n_jobs
+    if n_jobs is None:
+        n_jobs = 1
+    elif n_jobs < 0:
+        n_jobs = max(1, multiprocessing.cpu_count() + n_jobs)
+
+    def process_block_82(r_start, r_end, c_start, c_end):
+        block_result = np.zeros((r_end - r_start, c_end - c_start), dtype=np.float32)
+        for a in range(r_start, r_end):
+            for b in range(c_start, c_end):
+                if RGB82_slice[19, a, b] == 0:
+                    block_result[a - r_start, b - c_start] = 0
+                else:
+                    input_removed = RGB82_slice.data[:, a, b]
+                    block_result[a - r_start, b - c_start] = np.sum(1 - input_removed)
+        return block_result
+
+    def process_block_83(r_start, r_end, c_start, c_end):
+        block_result = np.zeros((r_end - r_start, c_end - c_start), dtype=np.float32)
+        for a in range(r_start, r_end):
+            for b in range(c_start, c_end):
+                if RGB83_slice[19, a, b] == 0:
+                    block_result[a - r_start, b - c_start] = 0
+                else:
+                    input_removed4 = RGB83_slice.data[:, a, b]
+                    block_result[a - r_start, b - c_start] = np.sum(1 - input_removed4)
+        return block_result
+
+    blocks = []
+    for r in range(0, y, block_size):
+        for c in range(0, z, block_size):
+            r_end = min(r + block_size, y)
+            c_end = min(c + block_size, z)
+            blocks.append((r, r_end, c, c_end))
+
+    results_82 = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(process_block_82)(r_start, r_end, c_start, c_end) for (r_start, r_end, c_start, c_end) in blocks
+    )
+    results_83 = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(process_block_83)(r_start, r_end, c_start, c_end) for (r_start, r_end, c_start, c_end) in blocks
+    )
+
+    full_82 = np.zeros((y, z), dtype=np.float32)
+    full_83 = np.zeros((y, z), dtype=np.float32)
+
+    for idx, (r_start, r_end, c_start, c_end) in enumerate(blocks):
+        full_82[r_start:r_end, c_start:c_end] = results_82[idx]
+        full_83[r_start:r_end, c_start:c_end] = results_83[idx]
+
+    RGB82.data = full_82
+    RGB83.data = full_83
+
+    # Compose RGB cube
+    RGB8_total = gauss_cube[0:3, :, :].copy()
+    RGB8_total.data = np.dstack((RGB81, RGB82, RGB83)).transpose(2, 0, 1)
+    RGB8_total.data[RGB8_total.data == 0] = np.nan
+
     return RGB8_total
