@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='MoonIndex',
-    version='3.0.0',
+    version='3.0.1',
     packages=find_packages(),
     long_description=long_description,
     long_description_content_type='text/markdown',
