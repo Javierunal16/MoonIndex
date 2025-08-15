@@ -720,7 +720,7 @@ def ASY(removed_cube, wavelengths, shoulder0, shoulder1, min1000, block_size=100
     n_jobs = number of cores to use. -1 for all cores, negative leaves that many cores free.
 
     Output:
-    2D image of band asymmetry values for each pixel, with optional local parabolic smoothing.
+    2D image of band asymmetry values for each pixel.
     '''
 
     # Compute spectral resolution
@@ -795,126 +795,39 @@ def ASY(removed_cube, wavelengths, shoulder0, shoulder1, min1000, block_size=100
         ASY_values[r_start:r_end, c_start:c_end] = results[idx]
         idx += 1
 
-    # Local 2D parabolic smoothing (11x11 window)
-    ASY_smoothed = ASY.data.copy()
-    offset = 3
-    for i in range(y):
-        for j in range(z):
-            if ASY_values[i, j] == 0:
-                ASY_smoothed[i, j] = 0
-                continue
-
-            i_min = max(0, i - offset)
-            i_max = min(y, i + offset + 1)
-            j_min = max(0, j - offset)
-            j_max = min(z, j + offset + 1)
-
-            window = ASY_values[i_min:i_max, j_min:j_max].flatten()
-            x = np.arange(len(window))
-
-            if len(window) >= 6 and not np.all(np.isnan(window)):
-                try:
-                    fit = np.polyfit(x, window, 2)
-                    smoothed_val = np.polyval(fit, x[len(x) // 2])
-                    ASY_smoothed[i, j] = smoothed_val
-                except:
-                    ASY_smoothed[i, j] = ASY_values[i, j]
-            else:
-                ASY_smoothed[i, j] = ASY_values[i, j]
-
     # Replace 0s with NaN (optional)
-    ASY_smoothed[ASY_smoothed == 0] = np.nan
-    ASY.data = ASY_smoothed
+    ASY_values[ASY_values == 0] = np.nan
+    ASY.data = ASY_values
 
     return ASY
 
 
-def RGB5 (gauss_cube,wavelengths,shoulder0,shoulder1,min1000,min2000):
+def RGB5(gauss_cube, wavelengths, shoulder0, shoulder1, min1000, min2000):
     '''Creates the RGB5 index. R: ASY, G: BCI, B: BCII.
     
     Inputs:
     gauss_cube = the filtered cube.
     wavelengths = the wavelengths,
-    shoulder0 = the left shoudler of the band, 
+    shoulder0 = the left shoulder of the band, 
     shoulder1 = the right shoulder of the band, 
     min1000 = the minimum at 1 um,
-    min2000 = the minimum ar 2 um.
+    min2000 = the minimum at 2 um.
     
     Output:
     The RGB5 RGB composite.'''
     
-    #Finding the spectral resolution, neccesary to find the area
-    SR=np.diff(wavelengths) 
-    #Adding the first value
-    SR=np.append(39.92,SR)   
+    # Compute ASY directly using the existing ASY() function
+    ASY_img = ASY(gauss_cube, wavelengths, shoulder0, shoulder1, min1000)
     
-    #Caculating the asymmetry
-    y,z=gauss_cube[0,:,:].shape
-    ASY=gauss_cube[0,:,:].copy()
+    # Create copy of first 3 bands (shape/metadata preserved)
+    RGB5 = gauss_cube[0:3, :, :].copy()
+    
+    # Combine the ASY, min1000 and min2000 values into an RGB composite
+    RGB5.data = np.dstack((ASY_img.data, min1000.data, min2000.data)).transpose(2, 0, 1)
+    
+    # Optional: replace zeroes with NaNs
+    RGB5.data[RGB5.data == 0] = np.nan
 
-    stack_ASY1=[]
-    stack_ASY2=[]
-    stack_ASY3=[]
-    for a in range(gauss_cube.data.shape[1]):
-        for b in range(gauss_cube.data.shape[2]):
-            
-            #The asymmetry is also calculated inside the shoulders
-            s00 = shoulder0.data[a,b]  
-            s11 = shoulder1.data[a,b]
-            input_min1000=min1000.data[a,b]
-            
-            if s00 == 0 or s11 == 0:   
-                    stack_ASY1.append(0)
-                    stack_ASY2.append(0)
-                    
-            else:
-                #Definnig the range
-                start1 = np.where(wavelengths == s00)[0][0].item()  
-                end1 = np.where(wavelengths == s11)[0][0].item()
-                middle=np.where(wavelengths == input_min1000)[0][0].item()
-           
-                input_SR1= SR[start1:middle + 1]
-                input_SR2= SR[middle + 1 :end1]
-                input_CCA= gauss_cube.data[:,a,b]
-            
-                sum4=0
-                for c in range(start1, middle+1):
-                    #Calculating the area of the first half of the zone
-                    sum4 += ((1 - input_CCA[c]) * input_SR1[c-start1])  
-                
-                stack_ASY1.append(sum4)
-            
-                sum5=0
-                
-                for d in range(middle+1, end1):
-                    #Calculating the area of the second half of the zone
-                    sum5 += ((1 - input_CCA[d]) * input_SR2[d-middle])  
-                
-                stack_ASY2.append(sum5)         
-            
-    #Asimetry calculation
-    #Calcualting the total area
-    sum_ASY=np.add(stack_ASY1,stack_ASY2)  
-
-    for a in range(len(stack_ASY2)):
-        
-        if stack_ASY1[a] ==0:
-            
-            stack_ASY3.append(0)
-        #If the left side area is bigger, the asmmetry is negative   
-        elif stack_ASY1[a] > stack_ASY2[a]:  
-            #The asymmetry is the difference beetwen the two areas when dividing the peak in half, it is given in as a pecentage of the total area        
-            stack_ASY3.append (-(((stack_ASY1[a]-stack_ASY2[a])*100)/sum_ASY[a]))  
-                    
-        else:  
-            #If the right side area is bigger, the asymmetry is positive    
-            stack_ASY3.append((stack_ASY2[a]-stack_ASY1[a])*100/sum_ASY[a])
-
-    stack_ASY3a=np.array(stack_ASY3)
-    ASY.data=stack_ASY3a.reshape(y,z)
-    RGB5=gauss_cube[0:3,:,:].copy()
-    RGB5.data=np.dstack((ASY,min1000,min2000)).transpose(2,0,1)
-    RGB5.data[RGB5.data==0]=np.nan
     return RGB5
 
 

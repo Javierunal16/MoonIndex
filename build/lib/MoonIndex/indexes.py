@@ -720,7 +720,7 @@ def ASY(removed_cube, wavelengths, shoulder0, shoulder1, min1000, block_size=100
     n_jobs = number of cores to use. -1 for all cores, negative leaves that many cores free.
 
     Output:
-    2D image of band asymmetry values for each pixel, with optional local parabolic smoothing.
+    2D image of band asymmetry values for each pixel.
     '''
 
     # Compute spectral resolution
@@ -795,36 +795,9 @@ def ASY(removed_cube, wavelengths, shoulder0, shoulder1, min1000, block_size=100
         ASY_values[r_start:r_end, c_start:c_end] = results[idx]
         idx += 1
 
-    # Local 2D parabolic smoothing (11x11 window)
-    ASY_smoothed = ASY.data.copy()
-    offset = 3
-    for i in range(y):
-        for j in range(z):
-            if ASY_values[i, j] == 0:
-                ASY_smoothed[i, j] = 0
-                continue
-
-            i_min = max(0, i - offset)
-            i_max = min(y, i + offset + 1)
-            j_min = max(0, j - offset)
-            j_max = min(z, j + offset + 1)
-
-            window = ASY_values[i_min:i_max, j_min:j_max].flatten()
-            x = np.arange(len(window))
-
-            if len(window) >= 6 and not np.all(np.isnan(window)):
-                try:
-                    fit = np.polyfit(x, window, 2)
-                    smoothed_val = np.polyval(fit, x[len(x) // 2])
-                    ASY_smoothed[i, j] = smoothed_val
-                except:
-                    ASY_smoothed[i, j] = ASY_values[i, j]
-            else:
-                ASY_smoothed[i, j] = ASY_values[i, j]
-
     # Replace 0s with NaN (optional)
-    ASY_smoothed[ASY_smoothed == 0] = np.nan
-    ASY.data = ASY_smoothed
+    ASY_values[ASY_values == 0] = np.nan
+    ASY.data = ASY_values
 
     return ASY
 
