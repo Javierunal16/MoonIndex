@@ -45,7 +45,7 @@ def indexes_total_CH(M3_cube,wavelengths, n_jobs=None):
     log_time("Convex hull removal", t0)
 
     # Copy cube
-    indexes_total = gauss_cube[0:28, :, :].copy()
+    indexes_total = gauss_cube[0:29, :, :].copy()
 
     # Minima and shoulders
     t0 = time.time()
@@ -65,9 +65,10 @@ def indexes_total_CH(M3_cube,wavelengths, n_jobs=None):
     M3_ol = olivine(gauss_cube)
     M3_cr = chromite(gauss_cube)
     M3_fe = iron(gauss_cube)
-    M3_ti = titanium(gauss_cube)
+    M3_ti = titanium(M3_cube)
     M3_clem = clementine(gauss_cube)
     M3_spanpx = RGB_spanpx(gauss_cube)
+    M3_OMAT= OMAT(gauss_cube)
     log_time("General indexes", t0)
 
     # Convex hull indexes
@@ -100,7 +101,7 @@ def indexes_total_CH(M3_cube,wavelengths, n_jobs=None):
         M3_BCI_CH, M3_BCII_CH, M3_BDI_CH, M3_BDII_CH, M3_SSI_CH,
         M3_RGB8_CH[0], M3_RGB8_CH[1], M3_RGB8_CH[2],
         M3_BAI1000_CH, M3_ASY1000_CH, M3_BAI2000_CH, M3_ASY2000_CH,
-        M3_RGB6_CH[0], M3_RGB6_CH[1], M3_RGB6_CH[2]
+        M3_RGB6_CH[0], M3_RGB6_CH[1], M3_RGB6_CH[2], M3_OMAT
     )).transpose(2, 0, 1)
     log_time("Stacking output bands", t0)
 
@@ -112,10 +113,10 @@ def indexes_total_CH(M3_cube,wavelengths, n_jobs=None):
              'Band center 2 µm CH', 'Band depth 1 µm CH', 'Band depth 2 µm CH', 'Spectral slope 1 µm CH',
              'Band depth 1.9 µm CH', 'Integrated band depth 2 µm CH', 'Integrated band depth 1 µm CH',
              'Band area 1 µm CH', 'Band assymetry 1 µm CH', 'Band area 2 µm CH', 'Band assymetry 2 µm CH',
-             'Band depth at 950 nm CH', 'Band depth at 1.05 µm CH', 'Band depth at 1.25 µm CH']
+             'Band depth at 950 nm CH', 'Band depth at 1.05 µm CH', 'Band depth at 1.25 µm CH','M3_OMAT']
 
     indexes_final_ch = xa.Dataset()
-    for e in range(28):
+    for e in range(29):
         indexes_final_ch[bands[e]] = indexes_total[e, :, :]
 
     log_time("Total time", start_total)
@@ -159,7 +160,7 @@ def indexes_total_SAFO(M3_cube, wavelengths, order1, order2, n_jobs=None):
     log_time("Continuum removal (SAFO)", t0)
 
     # Copy to output cube
-    indexes_total = gauss_cube[0:28, :, :].copy()
+    indexes_total = gauss_cube[0:29, :, :].copy()
 
     # General indexes
     t0 = time.time()
@@ -169,9 +170,10 @@ def indexes_total_SAFO(M3_cube, wavelengths, order1, order2, n_jobs=None):
     M3_ol = olivine(gauss_cube)  
     M3_cr = chromite(gauss_cube)
     M3_fe = iron(gauss_cube)
-    M3_ti = titanium(gauss_cube)
+    M3_ti = titanium(M3_cube)
     M3_clem = clementine(gauss_cube)
     M3_spanpx = RGB_spanpx(gauss_cube)
+    M3_OMAT= OMAT(gauss_cube)
     log_time("General indexes", t0)
 
     # Find minimums and shoulders
@@ -211,7 +213,7 @@ def indexes_total_SAFO(M3_cube, wavelengths, order1, order2, n_jobs=None):
         M3_BCI_SAFO, M3_BCII_SAFO, M3_BDI_SAFO, M3_BDII_SAFO, M3_SSI_SAFO,
         M3_RGB8_SAFO[0], M3_RGB8_SAFO[1], M3_RGB8_SAFO[2],
         M3_BAI1000_SAFO, M3_ASY1000_SAFO, M3_BAI2000_SAFO, M3_ASY2000_SAFO,
-        M3_RGB6_SAFO[0], M3_RGB6_SAFO[1], M3_RGB6_SAFO[2]
+        M3_RGB6_SAFO[0], M3_RGB6_SAFO[1], M3_RGB6_SAFO[2], M3_OMAT
     )).transpose(2, 0, 1)
     log_time("Stacking output cube", t0)
 
@@ -227,11 +229,11 @@ def indexes_total_SAFO(M3_cube, wavelengths, order1, order2, n_jobs=None):
         'Spectral slope 1 µm SAFO',
         'Band depth 1.9 µm SAFO', 'Integrated band depth 2 µm SAFO', 'Integrated band depth 1 µm SAFO',
         'Band area 1 µm SAFO', 'Band asymmetry 1 µm SAFO', 'Band area 2 µm SAFO', 'Band asymmetry 2 µm SAFO',
-        'Band depth at 950 nm SAFO', 'Band depth at 1.05 µm SAFO', 'Band depth at 1.25 µm SAFO'
+        'Band depth at 950 nm SAFO', 'Band depth at 1.05 µm SAFO', 'Band depth at 1.25 µm SAFO', 'OMAT'
     ]
 
     indexes_final_SAFO = xa.Dataset()
-    for e in range(28):
+    for e in range(29):
         indexes_final_SAFO[bands[e]] = indexes_total[e, :, :]
     log_time("Dataset creation", t0)
 
@@ -310,8 +312,16 @@ def chromite (gauss_cube):
     cr.data=((((gauss_cube[36,:,:]-gauss_cube[6,:,:])/600)*1500)+gauss_cube[36,:,:])/gauss_cube[77,:,:]
     return cr
 
+def OMAT (cube):
+    
+    mean_750 = np.mean(cube[5:8, :, :], axis=0)
+    mean_950 = np.mean(cube[15:18, :, :], axis=0)
 
-def iron (gauss_cube):
+    OMAT= ((cube[6,:,:] - 0.08)**2 + ((mean_950/mean_750)-1.18)**2)**0.5
+
+    return OMAT
+
+def iron (M3_cube):
     '''Creates the FeO index. Which return iron oxide abundance in percentage. 
     
     Input:
@@ -320,13 +330,16 @@ def iron (gauss_cube):
     Output: 
     FeO index.'''
     
-    fe=gauss_cube[0,:,:].copy()
-    fep=-np.arctan(((gauss_cube[16,:,:]/gauss_cube[6,:,:])-1.26)/(gauss_cube[6,:,]-0.01))
-    fe.data=8.878 * (fep**1.8732)
+    mean_750 = np.mean(M3_cube[5:8, :, :], axis=0)
+    mean_950 = np.mean(M3_cube[15:18, :, :], axis=0)
+    
+    fe=M3_cube[0,:,:].copy()
+    fep = -np.arctan2(((1.94*mean_950) / (2.13*mean_750)) - 1.18, (2.13*mean_750) - 0.08)
+    fe.data=(17.427*fep) -7.65
     return fe
 
 
-def titanium (gauss_cube):
+def titanium (cube):
     '''Creates the TiO index. Which returns titanium oxide abundance in percentage.
     
     Input:
@@ -334,10 +347,12 @@ def titanium (gauss_cube):
     
     Output: 
     TiO index.'''
+
+    mean_750 = np.mean(cube[5:8, :, :], axis=0)
     
-    ti=gauss_cube[0,:,:].copy()
-    tip=np.arctan(((gauss_cube[0,:,:]/gauss_cube[6,:,:])-0.45)/(gauss_cube[6,:,]-0.05))
-    ti.data=2.6275 * (tip**4.2964)
+    ti=cube[0,:,:].copy()
+    tip=np.arctan2(((1.64*cube[0,:,:])/(mean_750*2.13)) - 0.42, (2.13*mean_750) - 0.00)
+    ti.data=3.708 * (tip**5.979)
     return ti
 
 
