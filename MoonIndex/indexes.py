@@ -334,8 +334,9 @@ def iron (M3_cube):
     mean_950 = np.mean(M3_cube[15:18, :, :], axis=0)
     
     fe=M3_cube[0,:,:].copy()
-    fep = -np.arctan2(((1.94*mean_950) / (2.13*mean_750)) - 1.18, (2.13*mean_750) - 0.08)
-    fe.data=(17.427*fep) -7.65
+    fep = -np.arctan2(((mean_950) / (mean_750)) - 1.19, (mean_750) - 0.08)
+    fe.data=(17.427*fep) -7.565
+    fe.data[fe.data < 0] = np.nan
     return fe
 
 
@@ -351,7 +352,7 @@ def titanium (cube):
     mean_750 = np.mean(cube[5:8, :, :], axis=0)
     
     ti=cube[0,:,:].copy()
-    tip=np.arctan2(((1.64*cube[0,:,:])/(mean_750*2.13)) - 0.42, (2.13*mean_750) - 0.00)
+    tip=np.arctan2(((cube[0,:,:])/(mean_750)) - 0.42, (mean_750) - 0.00)
     ti.data=3.708 * (tip**5.979)
     return ti
 
